@@ -29,3 +29,7 @@ ecbuild_add_library(
         ecrad.${PREC}
         ecrad_base.${PREC}
 )
+
+# Export the list of sources for Loki processing
+list( TRANSFORM ifs_SOURCES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/" )
+set( ifs_SOURCES ${ifs_SOURCES} PARENT_SCOPE )

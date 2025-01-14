@@ -37,6 +37,7 @@ function( add_ecrad_ifs_test )
         # or by copying the original file
         set( CONFIG_NAM "${CMAKE_CURRENT_BINARY_DIR}/config_${_PAR_NAME}.nam" )
         list( APPEND _PAR_NAMELIST_OPTIONS "directory_name=\\\"data\\\"" )
+        list( APPEND _PAR_NAMELIST_OPTIONS "nblocksize=8" )
         add_custom_command(
             OUTPUT ${CONFIG_NAM}
             COMMAND
@@ -79,6 +80,28 @@ function( add_ecrad_ifs_test )
             )
 
         endforeach()
+
+        IF( HAVE_CDO )
+
+            foreach( binary ecrad_ifs_${PREC} ecrad_ifs_blocked_${PREC} )
+
+                set( ref_test_name ecrad_${PREC}_${_PAR_NAME}_net )
+                set( ver_test_name ${binary}_${_PAR_NAME}_net )
+
+                ecbuild_add_test(
+                    TARGET cdo_${ver_test_name}
+                    COMMAND ${CDO}
+                    ARGS
+                        diff,abslim=0.001,names=left
+                        output_${ver_test_name}.nc
+                        output_${ref_test_name}.nc
+                    TEST_DEPENDS
+                        ${ref_test_name}
+                        ${ver_test_name}
+                )
+            endforeach()
+
+        endif()
 
     endif()
 endfunction( add_ecrad_ifs_test )

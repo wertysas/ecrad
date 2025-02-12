@@ -4,6 +4,13 @@ FC = gfortran
 # Tell the compiler to accept C-preprocessor directives
 CPPFLAGS = -cpp
 
+# NETCDF
+NETCDF = /opt/homebrew/opt/netcdf
+NETCDF_INCLUDE = -I$(NETCDF)/include
+NETCDFF = /opt/homebrew/opt/netcdf-fortran
+NETCDFF_INCLUDE = -I$(NETCDFF)/include
+NETCDF_LIB = -L$(NETCDFF)/lib -L$(NETCDF)/lib -lnetcdff -lnetcdf -Wl,-rpath,$(NETCDF)/lib
+
 # Basic flags such as where to write module files. We used to have the
 # flag "-fconvert=big-endian" here because the RRTM input files are
 # big endian Fortran unformatted files, but now the file ordering has

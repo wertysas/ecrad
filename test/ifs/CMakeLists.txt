@@ -86,26 +86,28 @@ function( add_ecrad_ifs_test )
         # default standalone driver
         if( HAVE_BITIDENTITY_TESTING AND TARGET nccmp )
 
-            foreach( binary ecrad_ifs_${PREC} ecrad_ifs_blocked_${PREC} )
+            foreach( binary ecrad_ifs_${PREC} ecrad_ifs_blocked_${PREC} ecrad_loki_${PREC} )
 
-                set( ref_test_name ecrad_${PREC}_${_PAR_NAME}_net )
-                set( ver_test_name ${binary}_${_PAR_NAME}_net )
+                if( TARGET ${binary} )
+                    set( ref_test_name ecrad_${PREC}_${_PAR_NAME}_net )
+                    set( ver_test_name ${binary}_${_PAR_NAME}_net )
 
-                ecbuild_add_test(
-                    TARGET nccmp_${ver_test_name}
-                    COMMAND nccmp
-                    ARGS
-                        --longwave-threshold=0.001
-                        --shortwave-threshold=0.1
-                        output_${ref_test_name}.nc
-                        output_${ver_test_name}.nc
-                    TEST_DEPENDS
-                        ${ref_test_name}
-                        ${ver_test_name}
-                )
+                    ecbuild_add_test(
+                        TARGET nccmp_${ver_test_name}
+                        COMMAND nccmp
+                        ARGS
+                            --longwave-threshold=0.001
+                            --shortwave-threshold=0.1
+                            output_${ref_test_name}.nc
+                            output_${ver_test_name}.nc
+                        TEST_DEPENDS
+                            ${ref_test_name}
+                            ${ver_test_name}
+                    )
 
-                if( ${_PAR_XFAIL_VALIDATION} )
-                    set_property( TEST nccmp_${ver_test_name} PROPERTY WILL_FAIL true )
+                    if( ${_PAR_XFAIL_VALIDATION} )
+                        set_property( TEST nccmp_${ver_test_name} PROPERTY WILL_FAIL true )
+                    endif()
                 endif()
 
             endforeach()

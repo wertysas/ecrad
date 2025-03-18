@@ -32,9 +32,9 @@ jobs:
         build_type: [Release,Bit,Debug]
         name:
           - linux gnu-12
-          - linux gnu-12 loki
           - linux nvhpc-24.3
-          # - linux intel-classic
+          - linux intel-classic
+          - linux intel-llvm
 
         include:
 
@@ -44,19 +44,9 @@ jobs:
             compiler_cc: gcc-12
             compiler_cxx: g++-12
             compiler_fc: gfortran-12
-            ctest_options: -E memory
-            caching: true
-            loki: false
-
-          - name: linux gnu-12 loki
-            os: ubuntu-22.04
-            compiler: gnu-12
-            compiler_cc: gcc-12
-            compiler_cxx: g++-12
-            compiler_fc: gfortran-12
-            ctest_options: -E memory
             caching: true
             loki: true
+
 
           - name: linux nvhpc-24.3
             os: ubuntu-22.04
@@ -64,19 +54,26 @@ jobs:
             compiler_cc: nvc
             compiler_cxx: nvc++
             compiler_fc: nvfortran
-            ctest_options: -E memory
             caching: true
             loki: false
 
-          # Intel compiler segfaults in CI with unclear pthread-related backtrace
-          # - name : linux intel-classic
-          #   os: ubuntu-20.04
-          #   compiler: intel-classic
-          #   compiler_cc: icc
-          #   compiler_cxx: icpc
-          #   compiler_fc: ifort
-          #   caching: true
-          #   loki: false
+          - name : linux intel-classic
+            os: ubuntu-22.04
+            compiler: intel-classic
+            compiler_cc: icc
+            compiler_cxx: icpc
+            compiler_fc: ifort
+            caching: true
+            loki: true
+
+          - name : linux intel-llvm
+            os: ubuntu-24.04
+            compiler: intel-llvm
+            compiler_cc: icx
+            compiler_cxx: icpx
+            compiler_fc: ifx
+            caching: true
+            loki: true
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -144,14 +141,21 @@ jobs:
         echo "${NVHPC_DIR}/compilers/bin" >> $GITHUB_PATH
         echo "NVHPC_ROOT=${NVHPC_DIR}" >> $GITHUB_ENV
 
-    - name: Install Intel oneAPI compiler
-      if: contains( matrix.compiler, 'intel' )
+    - name: Install Intel Classic compiler
+      if: contains( matrix.compiler, 'intel-classic' )
       run: |
-        ${ECRAD_TOOLS}/install-intel-oneapi.sh
+        ${ECRAD_TOOLS}/install-intel-classic.sh
         source /opt/intel/oneapi/setvars.sh
         printenv >> $GITHUB_ENV
         echo "CACHE_SUFFIX=$CC-$($CC -dumpversion)" >> $GITHUB_ENV
 
+    - name: Install Intel LLVM compiler
+      if: contains( matrix.compiler, 'intel-llvm' )
+      run: |
+        ${ECRAD_TOOLS}/install-intel-llvm.sh
+        source /opt/intel/oneapi/setvars.sh
+        printenv >> $GITHUB_ENV
+        echo "CACHE_SUFFIX=$CC-$($CC -dumpversion)" >> $GITHUB_ENV
     - name: Install HDF5
       run: |
         if [[ -f ${{ env.DEPS_DIR }}/hdf5/lib/libhdf5.settings ]]; then

@@ -22,7 +22,7 @@ function( add_ecrad_nccmp_test )
     set( multiValueArgs )
     cmake_parse_arguments( _P "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
 
-    if( TARGET nccmp )
+    if( TARGET nccmp AND "${PREC}" STREQUAL "dp" )
 
         if( _P_REFERENCE_FILE )
             if( _P_REFERENCE_NAME )
@@ -48,7 +48,7 @@ function( add_ecrad_nccmp_test )
             TEST_DEPENDS ${DEPS}
         )
 
-        if( ${_P_XFAIL_VALIDATION} OR "${PREC}" STREQUAL "sp" )
+        if( ${_P_XFAIL_VALIDATION} )
             set_property( TEST nccmp_${_P_TEST_NAME} PROPERTY WILL_FAIL true )
         endif()
 
@@ -111,17 +111,19 @@ function( add_ecrad_ifs_test )
             DEPENDS config_${_PAR_NAME}_${PREC}
         )
 
-        foreach( binary ecrad_${PREC} ecrad_ifs_${PREC} ecrad_ifs_blocked_${PREC} )
+        foreach( binary ecrad_${PREC} ecrad_ifs_${PREC} ecrad_ifs_blocked_${PREC} ecrad_ifs_field_api_${PREC} )
 
-            ecbuild_add_test(
-                TARGET ${binary}_${_PAR_NAME}_net
-                COMMAND ${binary}
-                ARGS
-                    ${CONFIG_NET_NAM}
-                    ${TEST_IFS_INPUT}
-                    output_${binary}_${_PAR_NAME}_net.nc
-                DEPENDS config_${_PAR_NAME}_${PREC}_net
-            )
+            if( TARGET ${binary} )
+                ecbuild_add_test(
+                    TARGET ${binary}_${_PAR_NAME}_net
+                    COMMAND ${binary}
+                    ARGS
+                        ${CONFIG_NET_NAM}
+                        ${TEST_IFS_INPUT}
+                        output_${binary}_${_PAR_NAME}_net.nc
+                    DEPENDS config_${_PAR_NAME}_${PREC}_net
+                )
+            endif()
 
         endforeach()
 
@@ -142,7 +144,7 @@ function( add_ecrad_ifs_test )
                 set( NCCMP_OPTIONS )
             endif()
 
-            foreach( binary ecrad_ifs_${PREC} ecrad_ifs_blocked_${PREC} )
+            foreach( binary ecrad_ifs_${PREC} ecrad_ifs_blocked_${PREC} ecrad_ifs_field_api_${PREC} )
 
                 if( TARGET ${binary} )
                     add_ecrad_nccmp_test(

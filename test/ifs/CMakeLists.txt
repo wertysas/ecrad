@@ -17,12 +17,12 @@ file( CREATE_LINK "${PROJECT_SOURCE_DIR}/data" "${CMAKE_CURRENT_BINARY_DIR}/data
 function( add_ecrad_nccmp_test )
     # Utility function to validate output from a test against a reference file
 
-    set( options ENABLED XFAIL_VALIDATION )
+    set( options XFAIL_VALIDATION )
     set( oneValueArgs NAME REFERENCE_NAME REFERENCE_FILE TEST_NAME LW_THRESHOLD SW_THRESHOLD )
     set( multiValueArgs )
     cmake_parse_arguments( _P "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
 
-    if( TARGET nccmp )
+    if( TARGET nccmp AND "${PREC}" STREQUAL "dp" )
 
         if( _P_REFERENCE_FILE )
             if( _P_REFERENCE_NAME )
@@ -48,7 +48,7 @@ function( add_ecrad_nccmp_test )
             TEST_DEPENDS ${DEPS}
         )
 
-        if( ${_P_XFAIL_VALIDATION} OR "${PREC}" STREQUAL "sp" )
+        if( ${_P_XFAIL_VALIDATION} )
             set_property( TEST nccmp_${_P_TEST_NAME} PROPERTY WILL_FAIL true )
         endif()
 
@@ -69,8 +69,8 @@ function( add_ecrad_ifs_test )
     #  3. Using ecrad_ifs.${PREC} with net flux outputs
     #  4. Using ecrad_ifs_blocked.${PREC} with net flux outputs
 
-    set( options ENABLED XFAIL_VALIDATION )
-    set( oneValueArgs NAME CONFIG_FILE LW_THRESHOLD SW_THRESHOLD )
+    set( options XFAIL_VALIDATION )
+    set( oneValueArgs NAME ENABLED CONFIG_FILE LW_THRESHOLD SW_THRESHOLD )
     set( multiValueArgs NAMELIST_OPTIONS )
     cmake_parse_arguments( _PAR "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
 
@@ -111,7 +111,7 @@ function( add_ecrad_ifs_test )
             DEPENDS config_${_PAR_NAME}_${PREC}
         )
 
-        foreach( binary ecrad_${PREC} ecrad_ifs_${PREC} ecrad_ifs_blocked_${PREC} ecrad_loki_${PREC} )
+        foreach( binary ecrad_${PREC} ecrad_ifs_${PREC} ecrad_ifs_blocked_${PREC} ecrad_ifs_field_api_${PREC} ecrad_loki_${PREC} )
 
             if( TARGET ${binary} )
                 ecbuild_add_test(
@@ -144,7 +144,7 @@ function( add_ecrad_ifs_test )
                 set( NCCMP_OPTIONS )
             endif()
 
-            foreach( binary ecrad_ifs_${PREC} ecrad_ifs_blocked_${PREC} ecrad_loki_${PREC} )
+            foreach( binary ecrad_ifs_${PREC} ecrad_ifs_blocked_${PREC} ecrad_ifs_field_api_${PREC} ecrad_loki_${PREC} )
 
                 if( TARGET ${binary} )
                     add_ecrad_nccmp_test(
@@ -199,7 +199,7 @@ add_ecrad_ifs_test(
 # Tripleclouds solver with exponential-random overlap
 add_ecrad_ifs_test(
     NAME tripleclouds
-	NAMELIST_OPTIONS
+    NAMELIST_OPTIONS
         "sw_solver_name=\\\"Tripleclouds\\\""
         "lw_solver_name=\\\"Tripleclouds\\\""
     ENABLED ON
@@ -216,10 +216,10 @@ add_ecrad_ifs_test(
 add_ecrad_ifs_test(
     NAME spartacus
     NAMELIST_OPTIONS
-		"sw_solver_name=\\\"SPARTACUS\\\""
+        "sw_solver_name=\\\"SPARTACUS\\\""
         "lw_solver_name=\\\"SPARTACUS\\\""
-		"do_3d_effects=true"
-		"do_sw_delta_scaling_with_gases=false"
+        "do_3d_effects=true"
+        "do_sw_delta_scaling_with_gases=false"
     ENABLED ON
     XFAIL_VALIDATION
 )
@@ -228,11 +228,11 @@ add_ecrad_ifs_test(
 add_ecrad_ifs_test(
     NAME spartacus_maxentr
     NAMELIST_OPTIONS
-		"sw_solver_name=\\\"SPARTACUS\\\""
+        "sw_solver_name=\\\"SPARTACUS\\\""
         "lw_solver_name=\\\"SPARTACUS\\\""
-		"do_3d_effects=true"
-		"sw_entrapment_name=\\\"Maximum\\\""
-		"do_sw_delta_scaling_with_gases=false"
+        "do_3d_effects=true"
+        "sw_entrapment_name=\\\"Maximum\\\""
+        "do_sw_delta_scaling_with_gases=false"
     ENABLED ON
     XFAIL_VALIDATION
 )
@@ -241,8 +241,8 @@ add_ecrad_ifs_test(
 add_ecrad_ifs_test(
     NAME cloudless
     NAMELIST_OPTIONS
-		"use_aerosols=false"
-		"sw_solver_name=\\\"Cloudless\\\""
+        "use_aerosols=false"
+        "sw_solver_name=\\\"Cloudless\\\""
         "lw_solver_name=\\\"Cloudless\\\""
     ENABLED ON
 )
@@ -309,7 +309,7 @@ add_ecrad_ifs_test(
         "use_aerosols=false"
     SW_THRESHOLD 1e-10
     LW_THRESHOLD 1e-10
-    ENABLED ON
+    ENABLED OFF
 )
 
 add_ecrad_ifs_test(

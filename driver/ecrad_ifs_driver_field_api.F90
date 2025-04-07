@@ -1,4 +1,4 @@
-! ecrad_ifs_driver_blocked.F90 - Driver for offline ECRAD radiation scheme
+! ecrad_ifs_driver_field_api.F90 - Driver for offline ECRAD radiation scheme
 !
 ! (C) Copyright 2014- ECMWF.
 !
@@ -69,10 +69,9 @@ program ecrad_ifs_driver
   use ecrad_driver_read_input,  only : read_input
   use easy_netcdf
   use ifs_blocking
+  use radiation_scheme_layer_mod
 
   implicit none
-
-#include "radiation_scheme.intfb.h"
 
   ! The NetCDF file containing the input profiles
   type(netcdf_file)         :: file
@@ -140,6 +139,9 @@ program ecrad_ifs_driver
 
   ! Are any variables out of bounds?
   logical :: is_out_of_bounds
+
+  ! Pointers for field api objects
+  type(radintg_zrgp_type) :: zrgp_fields
 
 !  integer    :: iband(20), nweights
 !  real(jprb) :: weight(20)
@@ -324,24 +326,21 @@ program ecrad_ifs_driver
   call flux%allocate(yradiation%rad_config, 1, ncol, nlev)
 
   ! set relevant fluxes to zero
-  if (yradiation%rad_config%do_sw) then
-    flux%sw_up(:,:) = 0._jprb
-    flux%sw_dn(:,:) = 0._jprb
-    flux%sw_dn_direct(:,:) = 0._jprb
-    flux%sw_up_clear(:,:) = 0._jprb
-    flux%sw_dn_clear(:,:) = 0._jprb
-    flux%sw_dn_direct_clear(:,:) = 0._jprb
-    flux%sw_dn_diffuse_surf_canopy(:,:) = 0._jprb
-    flux%sw_dn_direct_surf_canopy(:,:) = 0._jprb
-  end if
-  if (yradiation%rad_config%do_lw) then
-    flux%lw_up(:,:) = 0._jprb
-    flux%lw_dn(:,:) = 0._jprb
-    flux%lw_up_clear(:,:) = 0._jprb
-    flux%lw_dn_clear(:,:) = 0._jprb
-    flux%lw_dn_surf_canopy(:,:) = 0._jprb
-    flux%lw_derivatives(:,:) = 0._jprb
-  end if
+  flux%lw_up(:,:) = 0._jprb
+  flux%lw_dn(:,:) = 0._jprb
+  flux%sw_up(:,:) = 0._jprb
+  flux%sw_dn(:,:) = 0._jprb
+  flux%sw_dn_direct(:,:) = 0._jprb
+  flux%lw_up_clear(:,:) = 0._jprb
+  flux%lw_dn_clear(:,:) = 0._jprb
+  flux%sw_up_clear(:,:) = 0._jprb
+  flux%sw_dn_clear(:,:) = 0._jprb
+  flux%sw_dn_direct_clear(:,:) = 0._jprb
+
+  flux%lw_dn_surf_canopy(:,:) = 0._jprb
+  flux%sw_dn_diffuse_surf_canopy(:,:) = 0._jprb
+  flux%sw_dn_direct_surf_canopy(:,:) = 0._jprb
+  flux%lw_derivatives(:,:) = 0._jprb
 
   ! Allocate memory for additional arrays
   allocate(ccn_land(ncol))
@@ -377,6 +376,8 @@ program ecrad_ifs_driver
 #endif
         & )
 
+  call ifs_setup_fapi(zrgp_fields, zrgp, yradiation, nlev, driver_config%iverbose)
+
   ! --------------------------------------------------------
   ! Section 4b: Call radiation_scheme with blocked memory data
   ! --------------------------------------------------------
@@ -392,84 +393,15 @@ program ecrad_ifs_driver
 #endif
   do jrepeat = 1,driver_config%nrepeat
 
-!    if (driver_config%do_parallel) then
-      ! Run radiation scheme over blocks of columns in parallel
-
-      !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)&
-      !$OMP&PRIVATE(JRL,IBEG,IEND,IL,IB)
-      do jrl=1,ncol,nproma
-        ibeg=jrl
-        iend=min(ibeg+nproma-1,ncol)
-        il=iend-ibeg+1
-        ib=(jrl-1)/nproma+1
-
-        if (driver_config%iverbose >= 3) then
-#ifndef NO_OPENMP
-          write(nulout,'(a,i0,a,i0,a,i0)')  'Thread ', omp_get_thread_num(), &
-               &  ' processing columns ', ibeg, '-', iend
-#else
-          write(nulout,'(a,i0,a,i0)')  'Processing columns ', ibeg, '-', iend
-#endif
-        end if
-
-        ! Call the ECRAD radiation scheme
-        call radiation_scheme &
-             & (yradiation, &
-             &  1, il, nproma, &                       ! startcol, endcol, ncol
-             &  nlev, size(aerosol%mixing_ratio,3), &    ! nlev, naerosols
-             &  single_level%solar_irradiance, &                               ! solar_irrad
-             ! array inputs
-             &  zrgp(1,ifs_config%iamu0,ib), zrgp(1,ifs_config%its,ib), &    ! mu0, skintemp
-             &  zrgp(1,ifs_config%iald,ib) , zrgp(1,ifs_config%ialp,ib), &    ! albedo_dif, albedo_dir
-             &  zrgp(1,ifs_config%iemiss,ib), &                   ! spectral emissivity
-             &  zrgp(1,ifs_config%iccnl,ib), zrgp(1,ifs_config%iccno,ib) ,&  ! CCN concentration, land and sea
-             &  zrgp(1,ifs_config%igelam,ib),zrgp(1,ifs_config%igemu,ib), &  ! longitude, sine of latitude
-             &  zrgp(1,ifs_config%islm,ib), &                     ! land sea mask
-             &  zrgp(1,ifs_config%ipr,ib),   zrgp(1,ifs_config%iti,ib),  &   ! full level pressure and temperature
-             &  zrgp(1,ifs_config%iaprs,ib), zrgp(1,ifs_config%ihti,ib), &   ! half-level pressure and temperature
-             &  zrgp(1,ifs_config%iwv,ib),   zrgp(1,ifs_config%iico2,ib), &
-             &  zrgp(1,ifs_config%iich4,ib), zrgp(1,ifs_config%iin2o,ib), &
-             &  zrgp(1,ifs_config%ino2,ib),  zrgp(1,ifs_config%ic11,ib), &
-             &  zrgp(1,ifs_config%ic12,ib),  zrgp(1,ifs_config%ic22,ib), &
-             &  zrgp(1,ifs_config%icl4,ib),  zrgp(1,ifs_config%ioz,ib), &
-             &  zrgp(1,ifs_config%iclc,ib),  zrgp(1,ifs_config%ilwa,ib), &
-             &  zrgp(1,ifs_config%iiwa,ib),  zrgp(1,ifs_config%irwa,ib), &
-             &  zrgp(1,ifs_config%iswa,ib), &
-             &  zrgp(1,ifs_config%iaer,ib),  zrgp(1,ifs_config%iaero,ib), &
-             ! flux outputs
-             &  zrgp(1,ifs_config%ifrso,ib), zrgp(1,ifs_config%ifrth,ib), &
-             &  zrgp(1,ifs_config%iswfc,ib), zrgp(1,ifs_config%ilwfc,ib),&
-             &  zrgp(1,ifs_config%ifrsod,ib),zrgp(1,ifs_config%ifrted,ib), &
-             &  zrgp(1,ifs_config%ifrsodc,ib),zrgp(1,ifs_config%ifrtedc,ib),&
-             &  zrgp(1,ifs_config%ifdir,ib), zrgp(1,ifs_config%icdir,ib), &
-             &  zrgp(1,ifs_config%isudu,ib), &
-             &  zrgp(1,ifs_config%iuvdf,ib), zrgp(1,ifs_config%iparf,ib), &
-             &  zrgp(1,ifs_config%iparcf,ib),zrgp(1,ifs_config%itincf,ib), &
-             &  zrgp(1,ifs_config%iemit,ib) ,zrgp(1,ifs_config%ilwderivative,ib), &
-             &  zrgp(1,ifs_config%iswdiffuseband,ib), zrgp(1,ifs_config%iswdirectband,ib)&
+    call RADIATION_SCHEME_LAYER( &
+      & yradiation, zrgp_fields, &
+      & ncol, nproma, nlev, size(aerosol%mixing_ratio, 3), &
+      & single_level%solar_irradiance, &
+      & driver_config%iverbose &
 #ifdef BITIDENTITY_TESTING
-            ! To validate results against standalone ecrad, we overwrite effective
-            ! radii, cloud overlap and seed with input values
-             &  ,pre_liq=zrgp(1,ifs_config%ire_liq,ib), &
-             &  pre_ice=zrgp(1,ifs_config%ire_ice,ib), &
-             &  pcloud_overlap=zrgp(1,ifs_config%ioverlap,ib), &
-             &  iseed=iseed(:,ib) &
+      & , iseed=iseed &
 #endif
-             & )
-      end do
-      !$OMP END PARALLEL DO
-
-!    else
-      ! Run radiation scheme serially
-!      if (driver_config%iverbose >= 3) then
-!        write(nulout,'(a,i0,a)')  'Processing ', ncol, ' columns'
-!      end if
-
-      ! Call the ECRAD radiation scheme
-!      call radiation_scheme(ncol, nlev, driver_config%istartcol, driver_config%iendcol, &
-!           &  config, single_level, thermodynamics, gas, cloud, aerosol, flux)
-
-!    end if
+      & )
 
   end do
 
@@ -490,22 +422,21 @@ program ecrad_ifs_driver
   ! "up" fluxes are actually net fluxes at this point - we modify the
   ! upwelling flux so that net=dn-up, while the TOA and surface
   ! downwelling fluxes are correct.
-  if (yradiation%rad_config%do_sw) then
-    flux%sw_up = -flux%sw_up
-    flux%sw_up(:,1) = flux%sw_up(:,1)+flux%sw_dn(:,1)
-    flux%sw_up(:,nlev+1) = flux%sw_up(:,nlev+1)+flux%sw_dn(:,nlev+1)
-    flux%sw_up_clear = -flux%sw_up_clear
-    flux%sw_up_clear(:,1) = flux%sw_up_clear(:,1)+flux%sw_dn_clear(:,1)
-    flux%sw_up_clear(:,nlev+1) = flux%sw_up_clear(:,nlev+1)+flux%sw_dn_clear(:,nlev+1)
-  end if
-  if (yradiation%rad_config%do_lw) then
-    flux%lw_up = -flux%lw_up
-    flux%lw_up(:,1) = flux%lw_up(:,1)+flux%lw_dn(:,1)
-    flux%lw_up(:,nlev+1) = flux%lw_up(:,nlev+1)+flux%lw_dn(:,nlev+1)
-    flux%lw_up_clear = -flux%lw_up_clear
-    flux%lw_up_clear(:,1) = flux%lw_up_clear(:,1)+flux%lw_dn_clear(:,1)
-    flux%lw_up_clear(:,nlev+1) = flux%lw_up_clear(:,nlev+1)+flux%lw_dn_clear(:,nlev+1)
-  end if
+  flux%sw_up = -flux%sw_up
+  flux%sw_up(:,1) = flux%sw_up(:,1)+flux%sw_dn(:,1)
+  flux%sw_up(:,nlev+1) = flux%sw_up(:,nlev+1)+flux%sw_dn(:,nlev+1)
+
+  flux%lw_up = -flux%lw_up
+  flux%lw_up(:,1) = flux%lw_up(:,1)+flux%lw_dn(:,1)
+  flux%lw_up(:,nlev+1) = flux%lw_up(:,nlev+1)+flux%lw_dn(:,nlev+1)
+
+  flux%sw_up_clear = -flux%sw_up_clear
+  flux%sw_up_clear(:,1) = flux%sw_up_clear(:,1)+flux%sw_dn_clear(:,1)
+  flux%sw_up_clear(:,nlev+1) = flux%sw_up_clear(:,nlev+1)+flux%sw_dn_clear(:,nlev+1)
+
+  flux%lw_up_clear = -flux%lw_up_clear
+  flux%lw_up_clear(:,1) = flux%lw_up_clear(:,1)+flux%lw_dn_clear(:,1)
+  flux%lw_up_clear(:,nlev+1) = flux%lw_up_clear(:,nlev+1)+flux%lw_dn_clear(:,nlev+1)
 
   ! --------------------------------------------------------
   ! Section 5: Check and save output

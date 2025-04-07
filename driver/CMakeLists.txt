@@ -43,37 +43,13 @@ ecbuild_add_executable(
     TARGET ecrad_ifs_blocked_${PREC}
     SOURCES
         ecrad_ifs_driver_blocked.F90
-        ifs_blocking.F90
+    DEFINITIONS
+        $<$<NOT:${HAVE_OMP}>:NO_OPENMP>
     LIBS
-        ifs.${PREC}
         driver_lib.${PREC}
+        ifs.${PREC}
+        ecrad.${PREC}
 )
-
-if( TARGET ecrad_loki.${PREC} )
-    # Use a different module directory here to avoid conflicts because
-    # ifs_blocking.F90 is built twice but its .mod file is written to
-    # the same module directory
-    set( _CMAKE_Fortran_MODULE_DIRECTORY "${CMAKE_Fortran_MODULE_DIRECTORY}" )
-    get_target_property( CMAKE_Fortran_MODULE_DIRECTORY ecrad_loki.${PREC} Fortran_MODULE_DIRECTORY )
-
-    ecbuild_add_executable(
-        TARGET ecrad_loki_${PREC}
-        SOURCES
-            ecrad_ifs_driver_blocked.F90
-            ifs_blocking.F90
-            ecrad_driver_read_input.F90
-            ecrad_driver_config.F90
-        DEFINITIONS
-            $<$<NOT:${HAVE_OMP}>:NO_OPENMP>
-        LIBS
-            ecrad_loki.${PREC}
-            ecrad_base.${PREC}
-            $<${HAVE_OMP}:OpenMP::OpenMP_Fortran>
-    )
-
-    # Reset the module directory
-    set( CMAKE_Fortran_MODULE_DIRECTORY "${_CMAKE_Fortran_MODULE_DIRECTORY}" )
-endif()
 
 # For ecrad_ifs_driver_blocked we have to disable bounds checking
 # (which is enabled in Debug builds) because sequence association
@@ -98,24 +74,61 @@ if( CMAKE_BUILD_TYPE MATCHES "Debug" )
     endif()
 endif()
 
+if( TARGET ecrad_loki.${PREC} )
+    ecbuild_add_executable(
+        TARGET ecrad_loki_${PREC}
+        SOURCES
+            ecrad_ifs_driver_blocked.F90
+            ecrad_driver_read_input.F90
+            ecrad_driver_config.F90
+        DEFINITIONS
+            $<$<NOT:${HAVE_OMP}>:NO_OPENMP>
+        LIBS
+            ecrad_loki.${PREC}
+            ecrad_base.${PREC}
+            $<${HAVE_OMP}:OpenMP::OpenMP_Fortran>
+    )
+    set_target_properties( ecrad_loki_${PREC}
+        PROPERTIES
+            Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/module_loki"
+    )
+endif()
+
+if( HAVE_FIELD_API )
+    ecbuild_add_executable(
+        TARGET ecrad_ifs_field_api_${PREC}
+        SOURCES
+            ecrad_ifs_driver_field_api.F90
+        DEFINITIONS
+            $<$<NOT:${HAVE_OMP}>:NO_OPENMP>
+            HAVE_FIELD_API
+        LIBS
+            driver_lib.${PREC}
+            ifs_field_api.${PREC}
+            ecrad.${PREC}
+    )
+endif()
+
 # Create a symlink for each driver without the precision suffix.
 # The default is to link to the double precision version if it is built,
 # and single precision otherwise.
 if ( "${PREC}" STREQUAL "dp" OR NOT HAVE_DOUBLE_PRECISION )
-    foreach( tgt ecrad ecrad_ifs ecrad_ifs_blocked )
-        add_custom_command(
-            TARGET ${tgt}_${PREC}
-            POST_BUILD
-            COMMAND
-                "${CMAKE_COMMAND}" -E create_symlink ${tgt}_${PREC} ${tgt}
-            BYPRODUCTS ${tgt}
-            WORKING_DIRECTORY
-                "${CMAKE_BINARY_DIR}/bin"
-            COMMENT "Creating symbolic link from ${tgt} to ${tgt}_${PREC}"
-        )
-        install(
-            FILES ${CMAKE_BINARY_DIR}/bin/${tgt}
-            DESTINATION bin
-        )
+    foreach( tgt ecrad ecrad_ifs ecrad_ifs_blocked ecrad_ifs_field_api )
+        if( TARGET ${tgt}_${PREC} )
+            add_custom_command(
+                TARGET ${tgt}_${PREC}
+                POST_BUILD
+                COMMAND
+                    "${CMAKE_COMMAND}" -E create_symlink ${tgt}_${PREC} ${tgt}
+                BYPRODUCTS ${tgt}
+                WORKING_DIRECTORY
+                    "${CMAKE_BINARY_DIR}/bin"
+                COMMENT "Creating symbolic link from ${tgt} to ${tgt}_${PREC}"
+            )
+            install(
+                FILES ${CMAKE_BINARY_DIR}/bin/${tgt}
+                DESTINATION bin
+            )
+        endif()
     endforeach()
 endif()

@@ -32,6 +32,8 @@ ecbuild_add_library(
         ${ifsrrtm_SOURCES}
         ${radiation_SOURCES}
         ${ifs_SOURCES}
+    DEFINITIONS
+        $<${HAVE_FIELD_API}:HAVE_FIELD_API>
     PRIVATE_INCLUDES
         ${ecrad_loki_SOURCE_DIRS}
     PUBLIC_INCLUDES
@@ -40,14 +42,22 @@ ecbuild_add_library(
         "$<INSTALL_INTERFACE:${ecrad_${PREC}_INSTALL_INCLUDEDIR}>"
     PRIVATE_LIBS
         ecrad_base.${PREC}
+        $<${HAVE_FIELD_API}:field_api_${PREC}>
         NetCDF::NetCDF_Fortran
         $<${HAVE_OMP}:OpenMP::OpenMP_Fortran>
 )
+
+if( HAVE_BITIDENTITY_TESTING )
+    set( LOKI_DEFINITIONS "DEFINITIONS;BITIDENTITY_TESTING" )
+else()
+    set( LOKI_DEFINITIONS )
+endif()
 
 loki_transform_target(
     TARGET ecrad_loki.${PREC}
     MODE ${LOKI_MODE}
     CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/ecrad_loki.config
+    ${LOKI_DEFINITIONS}
     PLAN ${CMAKE_CURRENT_BINARY_DIR}/ecrad_loki_plan.${PREC}.cmake
     SOURCES ${ecrad_loki_SOURCE_DIRS}
     NO_PLAN_SOURCEDIR

@@ -48,7 +48,7 @@ SUBROUTINE RADIATION_SCHEME_LAYER &
      ! OPTIONAL ARGUMENT for bit-identical results in tests
      &  ISEED)
 
-USE FIELD_MODULE
+USE FIELD_MODULE   , ONLY : FIELD_2RB, FIELD_3RB
 
 ! Modules from ifs or ifsaux libraries
 USE PARKIND1       , ONLY : JPIM, JPRB, JPRD

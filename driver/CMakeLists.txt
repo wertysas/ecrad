@@ -74,26 +74,6 @@ if( CMAKE_BUILD_TYPE MATCHES "Debug" )
     endif()
 endif()
 
-if( TARGET ecrad_loki.${PREC} )
-    ecbuild_add_executable(
-        TARGET ecrad_loki_${PREC}
-        SOURCES
-            ecrad_ifs_driver_blocked.F90
-            ecrad_driver_read_input.F90
-            ecrad_driver_config.F90
-        DEFINITIONS
-            $<$<NOT:${HAVE_OMP}>:NO_OPENMP>
-        LIBS
-            ecrad_loki.${PREC}
-            ecrad_base.${PREC}
-            $<${HAVE_OMP}:OpenMP::OpenMP_Fortran>
-    )
-    set_target_properties( ecrad_loki_${PREC}
-        PROPERTIES
-            Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/module_loki"
-    )
-endif()
-
 if( HAVE_FIELD_API )
     ecbuild_add_executable(
         TARGET ecrad_ifs_field_api_${PREC}
@@ -107,6 +87,56 @@ if( HAVE_FIELD_API )
             ifs_field_api.${PREC}
             ecrad.${PREC}
     )
+endif()
+
+if( TARGET ecrad_loki.${PREC} )
+
+    ecbuild_add_library(
+        TARGET loki_driver_lib.${PREC}
+        TYPE OBJECT
+        SOURCES
+            ecrad_driver_read_input.F90
+            ecrad_driver_config.F90
+        PUBLIC_DEFINITIONS
+            $<$<NOT:${HAVE_OMP}>:NO_OPENMP>
+        PUBLIC_INCLUDES
+            "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/module_loki>"
+        PUBLIC_LIBS
+            ecrad_loki.${PREC}
+            ecrad_base.${PREC}
+            $<${HAVE_FIELD_API}:field_api_${PREC}>
+            $<${HAVE_OMP}:OpenMP::OpenMP_Fortran>
+    )
+    set_target_properties( loki_driver_lib.${PREC}
+        PROPERTIES
+            Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/module_loki"
+    )
+
+    ecbuild_add_executable(
+        TARGET ecrad_loki_${PREC}
+        SOURCES
+            ecrad_ifs_driver_blocked.F90
+        DEFINITIONS
+            $<$<NOT:${HAVE_OMP}>:NO_OPENMP>
+        LIBS
+            loki_driver_lib.${PREC}
+            ecrad_base.${PREC}
+            $<${HAVE_OMP}:OpenMP::OpenMP_Fortran>
+    )
+
+    if( HAVE_FIELD_API )
+        ecbuild_add_executable(
+            TARGET ecrad_loki_field_api_${PREC}
+            SOURCES
+                ecrad_ifs_driver_field_api.F90
+            DEFINITIONS
+                $<$<NOT:${HAVE_OMP}>:NO_OPENMP>
+            LIBS
+            loki_driver_lib.${PREC}
+                ecrad_base.${PREC}
+                $<${HAVE_OMP}:OpenMP::OpenMP_Fortran>
+        )
+    endif()
 endif()
 
 # Create a symlink for each driver without the precision suffix.

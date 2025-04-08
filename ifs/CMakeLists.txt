@@ -59,12 +59,13 @@ set_target_properties( ifs.${PREC}
 
 if( HAVE_FIELD_API )
 
+    list( APPEND ifs_SOURCES radiation_scheme_layer.F90 )
+
     ecbuild_add_library(
         TARGET ifs_field_api.${PREC}
         TYPE OBJECT
         SOURCES
             ${ifs_SOURCES}
-            radiation_scheme_layer.F90
         DEFINITIONS
             $<$<NOT:${HAVE_OMP}>:NO_OPENMP>
             HAVE_FIELD_API

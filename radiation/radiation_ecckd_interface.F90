@@ -160,9 +160,9 @@ contains
     real(jphook) :: hook_handle
 
     if (lhook) call dr_hook('radiation_ecckd_interface:set_gas_units',0,hook_handle)
-
+    !$loki inline
     call gas%set_units(IVolumeMixingRatio)
-
+    !$loki end inline
     if (lhook) call dr_hook('radiation_ecckd_interface:set_gas_units',1,hook_handle)
 
   end subroutine set_gas_units

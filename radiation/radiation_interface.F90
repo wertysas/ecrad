@@ -172,6 +172,7 @@ contains
     type(config_type), intent(in)    :: config
     type(gas_type),    intent(inout) :: gas
 
+    !$loki remove
     if (config%i_gas_model_sw == IGasModelMonochromatic) then
       call set_gas_units_mono(gas)
     elseif (config%i_gas_model_sw == IGasModelIFSRRTMG &
@@ -180,9 +181,15 @@ contains
       ! work with this but performs an internal scaling
       call set_gas_units_ifs(gas)
     else
+    !$loki end remove
       ! Use volume mixing ratio preferred by ecCKD
+      !$loki inline
       call set_gas_units_ecckd(gas)
+      !$loki end inline
+
+    !$loki remove
     end if
+    !$loki end remove
 
   end subroutine set_gas_units
 

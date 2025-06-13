@@ -49,13 +49,18 @@ SUBROUTINE RADIATION_SCHEME_LAYER &
      &  ISEED)
 
 USE FIELD_MODULE   , ONLY : FIELD_2RB, FIELD_3RB
+USE FIELD_FACTORY_MODULE
 
 ! Modules from ifs or ifsaux libraries
-USE PARKIND1       , ONLY : JPIM, JPRB, JPRD
-USE YOMHOOK        , ONLY : LHOOK, DR_HOOK, JPHOOK
-USE RADIATION_SETUP, ONLY : TRADIATION
-USE RADIATION_IO   , ONLY : NULERR
-USE IFS_BLOCKING   , ONLY : RADINTG_ZRGP_TYPE
+USE PARKIND1                , ONLY : JPIM, JPRB, JPRD
+USE YOMHOOK                 , ONLY : LHOOK, DR_HOOK, JPHOOK
+USE RADIATION_SETUP         , ONLY : TRADIATION
+USE RADIATION_IO            , ONLY : NULERR
+USE IFS_BLOCKING            , ONLY : RADINTG_ZRGP_TYPE
+USE RADIATION_FIELD_TYPE_MODULE  , ONLY: SINGLE_LEVEL_FIELD_TYPE
+
+! Modules from radiation
+USE RADIATION_SINGLE_LEVEL, ONLY: SINGLE_LEVEL_TYPE
 
 IMPLICIT NONE
 
@@ -78,7 +83,11 @@ INTEGER,           INTENT(IN)   :: IVERBOSE
 ! Optional input argument (Added for validating against ecrad standalone!)
 INTEGER,           INTENT(IN), OPTIONAL :: ISEED(:,:)
 
-INTEGER(KIND=JPIM) :: KIDIA, KFDIA, IBL, JKGLO
+INTEGER(KIND=JPIM) :: KIDIA, KFDIA, IBL, JKGLO, NBLKS
+
+! Single level field type and type
+TYPE(SINGLE_LEVEL_FIELD_TYPE) :: SINGLE_LEVEL_FIELD
+TYPE(SINGLE_LEVEL_TYPE) :: SINGLE_LEVEL
 
 ! Field object pointers
 CLASS(FIELD_2RB), POINTER :: FIELD_2D => NULL()
@@ -88,7 +97,7 @@ CLASS(FIELD_3RB), POINTER :: FIELD_3D => NULL()
 #:for d in var_dims
 #:for d_idx, idx in enumerate(var_dims[d])
 #:set v = variables[idx]
-REAL(KIND=JPRB), POINTER :: PFIELD_${v.name}$(${','.join([':'] * d)}$) => NULL()
+CLASS(FIELD_${d}$RB), POINTER :: PFIELD_${v.name}$ => NULL()
 REAL(KIND=JPRB), POINTER, CONTIGUOUS :: P_${v.name}$(${','.join([':'] * (d-1))}$) => NULL()
 #:endfor
 #:endfor
@@ -96,38 +105,38 @@ REAL(KIND=JPRB), POINTER, CONTIGUOUS :: P_${v.name}$(${','.join([':'] * (d-1))}$
 #include "radiation_scheme.intfb.h"
 
 #:for idx, v in enumerate(variables)
+#:if idx in var_dims[2]
+  #:set field_ptr = 'FIELD_2D'
+  #:elif idx in var_dims[3]
+  #:set field_ptr = 'FIELD_3D'
+#:endif
+
 IF(${v.condition}$) THEN ! ${v.name}$
-  ASSOCIATE( FLD => ZRGP_FIELDS%MEMBERS(${idx + 1}$)%PTR )
-    SELECT TYPE( FLD )
-      #:if idx in var_dims[2]
-      CLASS IS( FIELD_2RB )
-        FIELD_2D => FLD
-        CALL FIELD_2D%GET_HOST_DATA_RDWR(PFIELD_${v.name}$)
-      #:elif idx in var_dims[3]
-      CLASS IS( FIELD_3RB )
-        FIELD_3D => FLD
-        CALL FIELD_3D%GET_HOST_DATA_RDWR(PFIELD_${v.name}$)
-      #:endif
-      CLASS DEFAULT
-        WRITE(NULERR, '(A)') 'UNEXPECTED CLASS FOR ${v.name}$'
-        CALL ABOR1('ERROR in RADIATION_SCHEME_LAYER')
-    END SELECT
-  END ASSOCIATE
+  CALL GET_STACK_MEMBER(ZRGP_FIELDS%FIELD_WRAPPER, ${idx+1}$, PFIELD_${v.name}$)
+  CALL PFIELD_${v.name}$%SYNC_HOST_RDWR()
 END IF
 #:endfor
 
+
+NBLKS = (NGPTOT-1)/NPROMA + 1
+CALL SINGLE_LEVEL_FIELD%INIT(NBLKS, NPROMA, YRADIATION%YRERAD%NSW, YRADIATION%YRERAD%NLWEMISS, &
+     &                      USE_SW_ALBEDO_DIRECT=.TRUE.)
+
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)&
-!$OMP&PRIVATE(JKGLO,KIDIA,KFDIA,IBL) FIRSTPRIVATE(ZRGP_FIELDS)
+!$OMP&PRIVATE(JKGLO,KIDIA,KFDIA,IBL) FIRSTPRIVATE(ZRGP_FIELDS, SINGLE_LEVEL_FIELD)
 DO JKGLO=1,NGPTOT,NPROMA
     KIDIA=1
     KFDIA=MIN(NPROMA,NGPTOT-JKGLO+1)
     IBL=(JKGLO-1)/NPROMA+1
 
+    ! Update single level type pointers
+    CALL SINGLE_LEVEL_FIELD%UPDATE_SINGLE_LEVEL(SINGLE_LEVEL)
+
     ! Create contiguous view pointers for each field in the current block
     #:for d in var_dims
     #:for d_idx, idx in enumerate(var_dims[d])
     #:set v = variables[idx]
-    IF ( ${v.condition}$ ) P_${v.name}$ => PFIELD_${v.name}$(${','.join([':'] * (d-1))}$, IBL)
+    IF ( ${v.condition}$ ) P_${v.name}$ => PFIELD_${v.name}$%GET_VIEW(IBL)
     #:endfor
     #:endfor
 
@@ -140,6 +149,7 @@ DO JKGLO=1,NGPTOT,NPROMA
     #:for arg in arg_list
         &, P_${arg}$ &
     #:endfor
+        &, SINGLE_LEVEL &
 #ifdef BITIDENTITY_TESTING
         ! To validate results against standalone ecrad, we overwrite effective
         ! radii, cloud overlap and seed with input values

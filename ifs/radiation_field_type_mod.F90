@@ -20,12 +20,14 @@ module radiation_field_type_module
   use parkind1,                 only : jprb, jpim ! Working precision, integer type
 
   ! FIELD API imports
-  use field_module, only: field_2rb, field_3rb, field_2im
+  use field_module, only: field_2rb, field_3rb, field_4rb, field_2im
   use field_factory_module
 
   ! radiation imports
   use radiation_single_level,     only: single_level_type
   use radiation_thermodynamics,   only: thermodynamics_type
+  use radiation_gas,              only: gas_type
+  use radiation_gas_constants,    only: NMaxGases
 
   implicit none
 
@@ -98,6 +100,24 @@ module radiation_field_type_module
     procedure :: update_thermodynamics => thermodynamics_field_update_thermodynamics
 
   end type thermodynamics_field_type
+
+  type gas_field_type
+    integer :: ncol           = 0 ! Number of columns in mixing_ratio
+    integer :: nlev           = 0 ! Number of levels  in mixing_ratio
+
+    real(jprb), pointer, dimension(:,:,:) :: mixing_ratio=>null()
+
+    class(field_4rb), pointer :: f_mixing_ratio=>null() ! (ncol, nlev, NMaxGases, nblks)
+
+  contains
+
+    procedure :: init => gas_field_init
+    procedure :: final => gas_field_final
+    procedure :: update_view => gas_field_update_view
+    procedure :: update_gas => gas_field_update_gas
+
+  end type gas_field_type
+
 
 contains
 
@@ -323,7 +343,7 @@ contains
 
     real(jphook) :: hook_handle
 
-    if (lhook) call dr_hook('radiation_thermodynamics:thermodynamics_field_final',0,hook_handle)
+    if (lhook) call dr_hook('radiation_field_type:thermodynamics_field_final',0,hook_handle)
 
     if (associated(this%f_pressure_hl)) then
       call field_delete(this%f_pressure_hl)
@@ -341,7 +361,7 @@ contains
     this%f_h2o_sat_liq=>null()
     this%h2o_sat_liq=>null()
 
-    if (lhook) call dr_hook('radiation_thermodynamics:thermodynamics_field_final',1,hook_handle)
+    if (lhook) call dr_hook('radiation_field_type:thermodynamics_field_final',1,hook_handle)
 
   end subroutine thermodynamics_field_final
 
@@ -356,7 +376,7 @@ contains
 
     real(jphook) :: hook_handle
 
-    if (lhook) call dr_hook('radiation_thermodynamics:thermodynamics_field_update_view',0,hook_handle)
+    if (lhook) call dr_hook('radiation_field_type:thermodynamics_field_update_view',0,hook_handle)
 
     if (associated(this%f_pressure_hl)) then
       this%pressure_hl => this%f_pressure_hl%get_view(block_index)
@@ -368,7 +388,7 @@ contains
       this%h2o_sat_liq => this%f_h2o_sat_liq%get_view(block_index)
     end if
 
-    if (lhook) call dr_hook('radiation_thermodynamics:thermodynamics_field_update_view',1,hook_handle)
+    if (lhook) call dr_hook('radiation_field_type:thermodynamics_field_update_view',1,hook_handle)
 
   end subroutine thermodynamics_field_update_view
 
@@ -383,7 +403,7 @@ contains
 
     real(jphook) :: hook_handle
 
-    if (lhook) call dr_hook('radiation_thermodynamics:thermodynamics_field_update_thermodynamics',0,hook_handle)
+    if (lhook) call dr_hook('radiation_field_type:thermodynamics_field_update_thermodynamics',0,hook_handle)
 
     if (associated(this%f_pressure_hl)) then
       thermodynamics%pressure_hl => this%pressure_hl
@@ -395,7 +415,95 @@ contains
       thermodynamics%h2o_sat_liq => this%h2o_sat_liq
     end if
 
-    if (lhook) call dr_hook('radiation_thermodynamics:thermodynamics_field_update_thermodynamics',1,hook_handle)
+    if (lhook) call dr_hook('radiation_field_type:thermodynamics_field_update_thermodynamics',1,hook_handle)
 
   end subroutine thermodynamics_field_update_thermodynamics
+
+
+!-----------------------------------------------------------------------
+! Gas field type procedures
+
+  !---------------------------------------------------------------------
+  ! Initialise gas field type
+  subroutine gas_field_init(this, nblocks, ncol, nlev)
+
+    use yomhook, only : lhook, dr_hook, jphook
+
+    class(gas_field_type), intent(inout) :: this
+    integer,         intent(in)    :: nblocks, ncol, nlev
+
+    real(jphook) :: hook_handle
+
+    if (lhook) call dr_hook('radiation_field_type:gas_field_init',0,hook_handle)
+
+    call field_new(this%f_mixing_ratio, ubounds=[ncol, nlev, NMaxGases, nblocks], persistent=.true., init_value=0.0_jprb)
+
+    this%ncol = ncol
+    this%nlev = nlev
+
+    if (lhook) call dr_hook('radiation_field_type:gas_field_init',1,hook_handle)
+
+  end subroutine gas_field_init
+
+  !---------------------------------------------------------------------
+  ! Finalise gas field type
+  subroutine gas_field_final(this)
+
+    use yomhook, only : lhook, dr_hook, jphook
+
+    class(gas_field_type),  intent(inout) :: this
+
+    real(jphook) :: hook_handle
+
+    if (lhook) call dr_hook('radiation_field_type:gas_field_final',0,hook_handle)
+
+    call field_delete(this%f_mixing_ratio)
+    this%f_mixing_ratio => null()
+
+    this%ncol = 0
+    this%nlev = 0
+
+    if (lhook) call dr_hook('radiation_field_type:gas_field_final',1,hook_handle)
+
+  end subroutine gas_field_final
+
+  !---------------------------------------------------------------------
+  ! Update view pointer
+  subroutine gas_field_update_view(this, block_index)
+
+    use yomhook, only : lhook, dr_hook, jphook
+
+    class(gas_field_type),  intent(inout) :: this
+    integer,                intent(in)    :: block_index
+
+    real(jphook) :: hook_handle
+
+    if (lhook) call dr_hook('radiation_field_type:gas_field_update_view',0,hook_handle)
+
+    if (associated(this%f_mixing_ratio)) this%mixing_ratio => this%f_mixing_ratio%get_view(block_index)
+
+    if (lhook) call dr_hook('radiation_field_type:gas_field_update_view',1,hook_handle)
+
+  end subroutine gas_field_update_view
+
+  !---------------------------------------------------------------------
+  ! Update gas field type
+  subroutine gas_field_update_gas(this, gas)
+
+    use yomhook, only : lhook, dr_hook, jphook
+
+    class(gas_field_type),  intent(inout) :: this
+    class(gas_type),        intent(inout) :: gas
+
+    real(jphook) :: hook_handle
+
+    if (lhook) call dr_hook('radiation_field_type:gas_field_update_gas',0,hook_handle)
+    if (associated(this%mixing_ratio)) gas%mixing_ratio => this%mixing_ratio
+    gas%ncol = this%ncol
+    gas%nlev = this%nlev
+
+    if (lhook) call dr_hook('radiation_field_type:gas_field_update_gas',1,hook_handle)
+
+  end subroutine gas_field_update_gas
+
 end module radiation_field_type_module

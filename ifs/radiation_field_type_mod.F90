@@ -28,6 +28,7 @@ module radiation_field_type_module
   use radiation_thermodynamics,   only: thermodynamics_type
   use radiation_gas,              only: gas_type
   use radiation_gas_constants,    only: NMaxGases
+  use radiation_cloud,            only: cloud_type
 
   implicit none
 
@@ -117,6 +118,45 @@ module radiation_field_type_module
     procedure :: update_gas => gas_field_update_gas
 
   end type gas_field_type
+
+  type cloud_field_type
+    integer                                   :: ntype = 0
+    logical                                   :: ntype_present = .false.
+    real(jprb), pointer, dimension(:,:,:) :: & ! (ncol,nlev,ntype)
+         &  mixing_ratio=>null(), &
+         &  effective_radius=>null()
+
+    real(jprb), pointer, dimension(:,:) :: & ! (ncol,nlev)
+         &  q_liq=>null(),  q_ice=>null(),  &
+         &  re_liq=>null(), re_ice=>null()
+    real(jprb), pointer, dimension(:,:) :: fraction=>null()
+    real(jprb), pointer, dimension(:,:) :: fractional_std=>null() ! (ncol,nlev)
+    real(jprb), pointer, dimension(:,:) :: & ! (ncol,nlev).
+         &  inv_cloud_effective_size=>null() ! (ncol,nlev)
+    real(jprb), pointer, dimension(:,:) :: &
+         &  inv_inhom_effective_size=>null()
+    real(jprb), pointer, dimension(:,:) :: overlap_param=>null() ! (ncol,nlev-1)
+
+    class(field_4rb), pointer :: & ! (ncol,nlev,ntype,nblocks)
+         &  f_mixing_ratio=>null(), &
+         &  f_effective_radius=>null()
+
+    class(field_3rb), pointer :: f_fraction=>null()
+    class(field_3rb), pointer :: f_fractional_std=>null() ! (ncol,nlev,nblocks)
+    class(field_3rb), pointer :: & ! (ncol,nlev,nblocks).
+         &  f_inv_cloud_effective_size=>null() ! (ncol,nlev,nblocks)
+    class(field_3rb), pointer :: &
+         &  f_inv_inhom_effective_size=>null()
+    class(field_3rb), pointer :: f_overlap_param=>null() ! (ncol,nlev-1,nblocks)
+
+  contains
+
+    procedure :: init => cloud_field_init
+    procedure :: final => cloud_field_final
+    procedure :: update_view => cloud_field_update_view
+    procedure :: update_cloud => cloud_field_update_cloud
+
+  end type cloud_field_type
 
 
 contains
@@ -242,21 +282,37 @@ contains
 
     if (lhook) call dr_hook('radiation_field_type:single_level_field_update_view',0,hook_handle)
 
-    if (associated(this%f_cos_sza)) this%cos_sza => this%f_cos_sza%get_view(block_index)
+    if (associated(this%f_cos_sza)) then
+      this%cos_sza => this%f_cos_sza%get_view(block_index)
+    end if
 
-    if (associated(this%f_skin_temperature)) this%skin_temperature => this%f_skin_temperature%get_view(block_index)
+    if (associated(this%f_skin_temperature)) then
+      this%skin_temperature => this%f_skin_temperature%get_view(block_index)
+    end if
 
-    if (associated(this%f_sw_albedo)) this%sw_albedo => this%f_sw_albedo%get_view(block_index)
+    if (associated(this%f_sw_albedo)) then
+      this%sw_albedo => this%f_sw_albedo%get_view(block_index)
+    end if
 
-    if (associated(this%f_sw_albedo_direct)) this%sw_albedo_direct => this%f_sw_albedo_direct%get_view(block_index)
+    if (associated(this%f_sw_albedo_direct)) then
+      this%sw_albedo_direct => this%f_sw_albedo_direct%get_view(block_index)
+    end if
 
-    if (associated(this%f_lw_emissivity)) this%lw_emissivity => this%f_lw_emissivity%get_view(block_index)
+    if (associated(this%f_lw_emissivity)) then
+      this%lw_emissivity => this%f_lw_emissivity%get_view(block_index)
+    end if
 
-    if (associated(this%f_lw_emission)) this%lw_emission => this%f_lw_emission%get_view(block_index)
+    if (associated(this%f_lw_emission)) then
+      this%lw_emission => this%f_lw_emission%get_view(block_index)
+    end if
 
-    if (associated(this%f_spectral_solar_scaling)) this%spectral_solar_scaling => this%f_spectral_solar_scaling%get_view(block_index)
+    if (associated(this%f_spectral_solar_scaling)) then
+      this%spectral_solar_scaling => this%f_spectral_solar_scaling%get_view(block_index)
+    end if
 
-    if (associated(this%f_iseed)) this%iseed => this%f_iseed%get_view(block_index)
+    if (associated(this%f_iseed)) then
+      this%iseed => this%f_iseed%get_view(block_index)
+    end if
 
     if (lhook) call dr_hook('radiation_field_type:single_level_field_update_view',1,hook_handle)
 
@@ -275,19 +331,33 @@ contains
 
     if (lhook) call dr_hook('radiation_field_type:single_level_field_update_single_level',0,hook_handle)
 
-    if (associated(this%cos_sza)) single_level%cos_sza => this%cos_sza
+    if (associated(this%cos_sza)) then
+      single_level%cos_sza => this%cos_sza
+    end if
 
-    if (associated(this%skin_temperature)) single_level%skin_temperature => this%skin_temperature
+    if (associated(this%skin_temperature)) then
+      single_level%skin_temperature => this%skin_temperature
+    end if
 
-    if (associated(this%sw_albedo)) single_level%sw_albedo => this%sw_albedo
+    if (associated(this%sw_albedo)) then
+      single_level%sw_albedo => this%sw_albedo
+    end if
 
-    if (associated(this%sw_albedo_direct)) single_level%sw_albedo_direct => this%sw_albedo_direct
+    if (associated(this%sw_albedo_direct)) then
+      single_level%sw_albedo_direct => this%sw_albedo_direct
+    end if
 
-    if (associated(this%lw_emissivity)) single_level%lw_emissivity => this%lw_emissivity
+    if (associated(this%lw_emissivity)) then
+      single_level%lw_emissivity => this%lw_emissivity
+    end if
 
-    if (associated(this%lw_emission)) single_level%lw_emission => this%lw_emission
+    if (associated(this%lw_emission)) then
+      single_level%lw_emission => this%lw_emission
+    end if
 
-    if (associated(this%spectral_solar_scaling)) single_level%spectral_solar_scaling => this%spectral_solar_scaling
+    if (associated(this%spectral_solar_scaling)) then
+      single_level%spectral_solar_scaling => this%spectral_solar_scaling
+    end if
 
     single_level%is_simple_surface = this%is_simple_surface
 
@@ -480,7 +550,9 @@ contains
 
     if (lhook) call dr_hook('radiation_field_type:gas_field_update_view',0,hook_handle)
 
-    if (associated(this%f_mixing_ratio)) this%mixing_ratio => this%f_mixing_ratio%get_view(block_index)
+    if (associated(this%f_mixing_ratio)) then
+      this%mixing_ratio => this%f_mixing_ratio%get_view(block_index)
+    end if
 
     if (lhook) call dr_hook('radiation_field_type:gas_field_update_view',1,hook_handle)
 
@@ -505,5 +577,226 @@ contains
     if (lhook) call dr_hook('radiation_field_type:gas_field_update_gas',1,hook_handle)
 
   end subroutine gas_field_update_gas
+
+
+!-----------------------------------------------------------------------
+! cloud_field_type procedures
+
+  !---------------------------------------------------------------------
+  ! Initialise cloud_field_type
+  subroutine cloud_field_init(this, nblocks, ncol, nlev, ntype, use_inhom_effective_size, frac_std)
+
+    use yomhook,     only : lhook, dr_hook, jphook
+
+    class(cloud_field_type), intent(inout), target :: this
+    integer, intent(in)              :: nblocks   ! Total number of blocks
+    integer, intent(in)              :: ncol   ! Number of columns
+    integer, intent(in)              :: nlev   ! Number of levels
+    integer, intent(in), optional    :: ntype
+    logical, intent(in), optional    :: use_inhom_effective_size
+    real(jprb), intent(in), optional :: frac_std ! Fractional std
+
+    real(jprb)   :: frac_std_local = 1.0_jprb
+    real(jphook) :: hook_handle
+
+    if (lhook) call dr_hook('radiation_field_type:cloud_field_init',0,hook_handle)
+
+    if (present(ntype)) then
+      this%ntype = ntype
+      this%ntype_present = .true.
+    else
+      this%ntype = 2
+      this%ntype_present = .false.
+    end if
+
+    if (present(frac_std)) frac_std_local = frac_std
+
+    call field_new(this%f_mixing_ratio, ubounds=[ncol,nlev,this%ntype, nblocks], persistent=.true.)
+    call field_new(this%f_effective_radius, ubounds=[ncol,nlev,this%ntype, nblocks], persistent=.true.)
+
+    call field_new(this%f_fraction, ubounds=[ncol,nlev, nblocks], persistent=.true.)
+    call field_new(this%f_overlap_param, ubounds=[ncol,nlev-1, nblocks], persistent=.true.)
+    call field_new(this%f_fractional_std, ubounds=[ncol,nlev, nblocks], persistent=.true., init_value=frac_std_local)
+    call field_new(this%f_inv_cloud_effective_size, ubounds=[ncol,nlev, nblocks], persistent=.true.)
+    call field_new(this%f_inv_inhom_effective_size, ubounds=[ncol,nlev, nblocks], persistent=.true.)
+
+    if (lhook) call dr_hook('radiation_radiation_field_type:cloud_field_init',1,hook_handle)
+
+  end subroutine cloud_field_init
+
+  !---------------------------------------------------------------------
+  ! cloud_field_type finalisation
+  subroutine cloud_field_final(this)
+
+    use yomhook,     only : lhook, dr_hook, jphook
+
+    class(cloud_field_type), intent(inout) :: this
+
+    real(jphook) :: hook_handle
+
+    if (lhook) call dr_hook('radiation_field_type:cloud_field_final',0,hook_handle)
+
+    this%q_liq => null()
+    this%q_ice => null()
+    this%re_liq => null()
+    this%re_ice => null()
+
+    if (associated(this%f_mixing_ratio)) then
+      call field_delete(this%f_mixing_ratio)
+    end if
+    this%f_mixing_ratio=>null()
+    this%mixing_ratio=>null()
+    if (associated(this%f_effective_radius)) then
+      call field_delete(this%f_effective_radius)
+    end if
+    this%f_effective_radius=>null()
+    this%effective_radius=>null()
+    if (associated(this%f_fraction)) then
+      call field_delete(this%f_fraction)
+    end if
+    this%f_fraction=>null()
+    this%fraction=>null()
+    if (associated(this%f_overlap_param)) then
+      call field_delete(this%f_overlap_param)
+    end if
+    this%f_overlap_param=>null()
+    this%overlap_param=>null()
+    if (associated(this%f_fractional_std)) then
+      call field_delete(this%f_fractional_std)
+    end if
+    this%f_fractional_std=>null()
+    this%fractional_std=>null()
+    if (associated(this%f_inv_cloud_effective_size)) then
+      call field_delete(this%f_inv_cloud_effective_size)
+    end if
+    this%f_inv_cloud_effective_size=>null()
+    this%inv_cloud_effective_size=>null()
+    if (associated(this%f_inv_inhom_effective_size)) then
+      call field_delete(this%f_inv_inhom_effective_size)
+    end if
+    this%f_inv_inhom_effective_size=>null()
+    this%inv_inhom_effective_size=>null()
+
+    this%ntype_present = .false.
+    this%ntype = 0
+
+    this%q_liq=>null()
+    this%q_ice=>null()
+    this%re_liq=>null()
+    this%re_ice=>null()
+
+    if (lhook) call dr_hook('radiation_field_type:cloud_field_final',1,hook_handle)
+
+  end subroutine cloud_field_final
+
+  !---------------------------------------------------------------------
+  ! Update view pointers of cloud_field_type
+  subroutine cloud_field_update_view(this, block_index)
+
+    use yomhook,     only : lhook, dr_hook, jphook
+
+    class(cloud_field_type), intent(inout)  :: this
+    integer, intent(in)                     :: block_index
+
+    real(jphook) :: hook_handle
+
+    if (lhook) call dr_hook('radiation_field_type:cloud_field_update_view',0,hook_handle)
+
+
+    if (associated(this%f_mixing_ratio)) then
+      this%mixing_ratio => this%f_mixing_ratio%get_view(block_index)
+    end if
+    if (associated(this%f_mixing_ratio)) then
+      this%mixing_ratio => this%f_mixing_ratio%get_view(block_index)
+    end if
+    if (associated(this%f_effective_radius)) then
+      this%effective_radius => this%f_effective_radius%get_view(block_index)
+    end if
+
+    if (associated(this%f_fraction)) then
+      this%fraction => this%f_fraction%get_view(block_index)
+    end if
+    if (associated(this%f_overlap_param)) then
+      this%overlap_param => this%f_overlap_param%get_view(block_index)
+    end if
+    if (associated(this%f_fractional_std)) then
+      this%fractional_std => this%f_fractional_std%get_view(block_index)
+    end if
+    if (associated(this%f_inv_cloud_effective_size)) then
+      this%inv_cloud_effective_size => this%f_inv_cloud_effective_size%get_view(block_index)
+    end if
+
+    if (associated(this%f_inv_inhom_effective_size)) then
+      this%inv_inhom_effective_size => this%f_inv_inhom_effective_size%get_view(block_index)
+    end if
+
+    if (.not. this%ntype_present) then
+      ! Older interface in which only liquid and ice are supported
+      if (associated(this%mixing_ratio)) then
+        this%q_liq  => this%mixing_ratio(:,:,1)
+        this%q_ice  => this%mixing_ratio(:,:,2)
+      end if
+      if (associated(this%effective_radius)) then
+        this%re_liq => this%effective_radius(:,:,1)
+        this%re_ice => this%effective_radius(:,:,2)
+      end if
+    end if
+
+    if (lhook) call dr_hook('radiation_radiation_field_type:cloud_field_update_view',1,hook_handle)
+
+  end subroutine cloud_field_update_view
+
+  !---------------------------------------------------------------------
+  ! Update cloud pointers of cloud_field_type
+  subroutine cloud_field_update_cloud(this, ylcloud)
+
+    use yomhook,     only : lhook, dr_hook, jphook
+
+    class(cloud_field_type), intent(inout)  :: this
+    class(cloud_type), intent(inout)        :: ylcloud
+
+    real(jphook) :: hook_handle
+
+    if (lhook) call dr_hook('radiation_field_type:cloud_field_update_cloud',0,hook_handle)
+
+
+    if (associated(this%mixing_ratio)) then
+      ylcloud%mixing_ratio => this%mixing_ratio
+    end if
+    if (associated(this%effective_radius)) then
+      ylcloud%effective_radius => this%effective_radius
+    end if
+
+    if (associated(this%fraction)) then
+      ylcloud%fraction => this%fraction
+    end if
+    if (associated(this%overlap_param)) then
+      ylcloud%overlap_param => this%overlap_param
+    end if
+    if (associated(this%fractional_std)) then
+      ylcloud%fractional_std => this%fractional_std
+    end if
+    if (associated(this%inv_cloud_effective_size)) then
+      ylcloud%inv_cloud_effective_size => this%inv_cloud_effective_size
+    end if
+
+    if (associated(this%inv_inhom_effective_size)) then
+      ylcloud%inv_inhom_effective_size => this%inv_inhom_effective_size
+    end if
+
+    if (.not. this%ntype_present) then
+      if (associated(this%mixing_ratio)) then
+        ylcloud%q_liq  => this%q_liq
+        ylcloud%q_ice  => this%q_ice
+      end if
+      if (associated(this%effective_radius)) then
+        ylcloud%re_liq => this%re_liq
+        ylcloud%re_ice => this%re_ice
+      end if
+    end if
+
+    if (lhook) call dr_hook('radiation_radiation_field_type:cloud_field_update_cloud',1,hook_handle)
+
+  end subroutine cloud_field_update_cloud
 
 end module radiation_field_type_module

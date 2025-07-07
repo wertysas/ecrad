@@ -29,6 +29,7 @@ module radiation_field_type_module
   use radiation_gas,              only: gas_type
   use radiation_gas_constants,    only: NMaxGases
   use radiation_cloud,            only: cloud_type
+  use radiation_aerosol,          only: aerosol_type
 
   implicit none
 
@@ -158,6 +159,21 @@ module radiation_field_type_module
 
   end type cloud_field_type
 
+  type aerosol_field_type
+    class(field_4rb), pointer :: & ! (ncol,istartlev:iendlev,config%n_aerosol_types, nblocks)
+          &  f_mixing_ratio=>null()
+    real(jprb), pointer, dimension(:,:,:) :: & ! (ncol,istartlev:iendlev,config%n_aerosol_types)
+          &  mixing_ratio=>null()
+
+     integer :: istartlev, iendlev
+     logical :: is_direct = .false.
+
+  contains
+    procedure :: init           => aerosol_field_init
+    procedure :: final          => aerosol_field_final
+    procedure :: update_view    => aerosol_field_update_view
+    procedure :: update_aerosol => aerosol_field_update_aerosol
+  end type aerosol_field_type
 
 contains
 
@@ -798,5 +814,103 @@ contains
     if (lhook) call dr_hook('radiation_radiation_field_type:cloud_field_update_cloud',1,hook_handle)
 
   end subroutine cloud_field_update_cloud
+
+
+!-----------------------------------------------------------------------
+! aerosol_field_type procedures
+
+  !---------------------------------------------------------------------
+  ! Initialise aerosol_field_type
+  subroutine aerosol_field_init(this, nblocks, ncol, istartlev, iendlev, ntype)
+
+    use yomhook,     only : lhook, dr_hook, jphook
+
+    class(aerosol_field_type), intent(inout)  :: this
+    integer, intent(in)                       :: nblocks  ! Total number of blocks
+    integer, intent(in)                       :: ncol  ! Number of columns
+    integer, intent(in)                       :: istartlev, iendlev ! Level range
+    integer, intent(in)                       :: ntype ! Number of aerosol types
+
+    real(jphook) :: hook_handle
+
+    if (lhook) call dr_hook('radiation_field_type:aerosol_field_init',0,hook_handle)
+
+    this%is_direct = .false.
+    this%istartlev = istartlev
+    this%iendlev   = iendlev
+
+    call field_new(this%f_mixing_ratio, lbounds=[1,istartlev,1,1], &
+                   &                    ubounds=[ncol,iendlev,ntype,nblocks], persistent=.true.)
+
+    if (lhook) call dr_hook('radiation_radiation_field_type:aerosol_field_init',1,hook_handle)
+
+  end subroutine aerosol_field_init
+
+  !---------------------------------------------------------------------
+  ! aerosol_field_type finalisation
+  subroutine aerosol_field_final(this)
+
+    use yomhook,     only : lhook, dr_hook, jphook
+
+    class(aerosol_field_type), intent(inout) :: this
+
+    real(jphook) :: hook_handle
+
+    if (lhook) call dr_hook('radiation_field_type:aerosol_field_final',0,hook_handle)
+    if (associated(this%f_mixing_ratio)) then
+      call field_delete(this%f_mixing_ratio)
+    end if
+    this%f_mixing_ratio=>null()
+    this%mixing_ratio=>null()
+
+    if (lhook) call dr_hook('radiation_field_type:aerosol_field_final',1,hook_handle)
+
+  end subroutine aerosol_field_final
+
+  !---------------------------------------------------------------------
+  ! Update view pointers of aerosol_field_type
+  subroutine aerosol_field_update_view(this, block_index)
+
+    use yomhook,     only : lhook, dr_hook, jphook
+
+    class(aerosol_field_type), intent(inout)  :: this
+    integer, intent(in)                     :: block_index
+
+    real(jphook) :: hook_handle
+
+    if (lhook) call dr_hook('radiation_field_type:aerosol_field_update_view',0,hook_handle)
+
+    if (associated(this%f_mixing_ratio)) then
+      this%mixing_ratio => this%f_mixing_ratio%get_view(block_index)
+    end if
+
+    if (lhook) call dr_hook('radiation_radiation_field_type:aerosol_field_update_view',1,hook_handle)
+
+  end subroutine aerosol_field_update_view
+
+  !---------------------------------------------------------------------
+  ! Update aerosol pointers of aerosol_field_type
+  subroutine aerosol_field_update_aerosol(this, ylaerosol)
+
+    use yomhook,     only : lhook, dr_hook, jphook
+
+    class(aerosol_field_type), intent(inout)  :: this
+    class(aerosol_type), intent(inout)        :: ylaerosol
+
+    real(jphook) :: hook_handle
+
+    if (lhook) call dr_hook('radiation_field_type:aerosol_field_update_aerosol',0,hook_handle)
+
+    if (associated(this%mixing_ratio)) then
+      ylaerosol%mixing_ratio => this%mixing_ratio
+    end if
+
+    ylaerosol%is_direct=this%is_direct
+    ylaerosol%istartlev=this%istartlev
+    ylaerosol%iendlev=this%iendlev
+
+    if (lhook) call dr_hook('radiation_radiation_field_type:aerosol_field_update_aerosol',1,hook_handle)
+
+  end subroutine aerosol_field_update_aerosol
 
 end module radiation_field_type_module

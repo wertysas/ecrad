@@ -30,6 +30,7 @@ module radiation_field_type_module
   use radiation_gas_constants,    only: NMaxGases
   use radiation_cloud,            only: cloud_type
   use radiation_aerosol,          only: aerosol_type
+  use radiation_flux,             only: flux_type
 
   implicit none
 
@@ -174,6 +175,110 @@ module radiation_field_type_module
     procedure :: update_view    => aerosol_field_update_view
     procedure :: update_aerosol => aerosol_field_update_aerosol
   end type aerosol_field_type
+
+
+  type flux_field_type
+    real(jprb), pointer, dimension(:,:) :: &  ! (ncol,nlev+1)
+         &  lw_up=>null(), lw_dn=>null(), &
+         &  sw_up=>null(), sw_dn=>null(), &
+         &  sw_dn_direct=>null(), &
+         &  lw_up_clear=>null(), lw_dn_clear=>null(), &
+         &  sw_up_clear=>null(), sw_dn_clear=>null(), &
+         &  sw_dn_direct_clear=>null()
+
+    class(field_3rb), pointer :: &  ! (ncol,nlev+1,nblocks)
+         &  f_lw_up=>null(), f_lw_dn=>null(), &
+         &  f_sw_up=>null(), f_sw_dn=>null(), &
+         &  f_sw_dn_direct=>null(), &
+         &  f_lw_up_clear=>null(), f_lw_dn_clear=>null(), &
+         &  f_sw_up_clear=>null(), f_sw_dn_clear=>null(), &
+         &  f_sw_dn_direct_clear=>null()
+
+    
+    real(jprb), pointer, dimension(:,:,:) :: & ! (nband,ncol,nlev+1)
+         &  lw_up_band=>null(), lw_dn_band=>null(), &
+         &  sw_up_band=>null(), sw_dn_band=>null(), &
+         &  sw_dn_direct_band=>null(), &
+         &  lw_up_clear_band=>null(), lw_dn_clear_band=>null(), &
+         &  sw_up_clear_band=>null(), sw_dn_clear_band=>null(), &
+         &  sw_dn_direct_clear_band=>null()
+
+    class(field_4rb), pointer :: & ! (nband,ncol,nlev+1,nblocks)
+         &  f_lw_up_band=>null(), f_lw_dn_band=>null(), &
+         &  f_sw_up_band=>null(), f_sw_dn_band=>null(), &
+         &  f_sw_dn_direct_band=>null(), &
+         &  f_lw_up_clear_band=>null(), f_lw_dn_clear_band=>null(), &
+         &  f_sw_up_clear_band=>null(), f_sw_dn_clear_band=>null(), &
+         &  f_sw_dn_direct_clear_band=>null()
+
+
+    real(jprb), pointer, dimension(:,:) :: &  ! (ng,ncol)
+         &  lw_dn_surf_g=>null(), lw_dn_surf_clear_g=>null(), &
+         &  sw_dn_diffuse_surf_g=>null(), sw_dn_direct_surf_g=>null(), &
+         &  sw_dn_diffuse_surf_clear_g=>null(), sw_dn_direct_surf_clear_g=>null()
+
+    class(field_3rb), pointer :: &  ! (ng,ncol,nblocks)
+         &  f_lw_dn_surf_g=>null(), f_lw_dn_surf_clear_g=>null(), &
+         &  f_sw_dn_diffuse_surf_g=>null(), f_sw_dn_direct_surf_g=>null(), &
+         &  f_sw_dn_diffuse_surf_clear_g=>null(), f_sw_dn_direct_surf_clear_g=>null()
+
+    
+    real(jprb), pointer, dimension(:,:) :: &  !(ng,ncol)
+         &  lw_up_toa_g=>null(), lw_up_toa_clear_g=>null(), &
+         &  sw_dn_toa_g=>null(), sw_up_toa_g=>null(), sw_up_toa_clear_g=>null()
+    
+    class(field_3rb), pointer :: &  !(ng,ncol,nblocks)
+         &  f_lw_up_toa_g=>null(), f_lw_up_toa_clear_g=>null(), &
+         &  f_sw_dn_toa_g=>null(), f_sw_up_toa_g=>null(), f_sw_up_toa_clear_g=>null()
+
+
+    real(jprb), pointer, dimension(:,:) :: &  ! (nband,ncol)
+         &  sw_dn_surf_band=>null(), sw_dn_direct_surf_band=>null(), &
+         &  sw_dn_surf_clear_band=>null(), sw_dn_direct_surf_clear_band=>null()
+    
+    class(field_3rb), pointer :: &  ! (nband,ncol,nblocks)
+         &  f_sw_dn_surf_band=>null(), f_sw_dn_direct_surf_band=>null(), &
+         &  f_sw_dn_surf_clear_band=>null(), f_sw_dn_direct_surf_clear_band=>null()
+
+
+    real(jprb), pointer, dimension(:,:) :: &  ! (nband,ncol)
+         &  lw_up_toa_band=>null(), lw_up_toa_clear_band=>null(), &
+         &  sw_dn_toa_band=>null(), sw_up_toa_band=>null(), sw_up_toa_clear_band=>null()
+
+    class(field_3rb), pointer :: &
+         &  f_lw_up_toa_band=>null(), f_lw_up_toa_clear_band=>null(), &
+         &  f_sw_dn_toa_band=>null(), f_sw_up_toa_band=>null(), f_sw_up_toa_clear_band=>null()
+
+
+    real(jprb), pointer, dimension(:,:) :: &
+         &  lw_dn_surf_canopy=>null(), &
+         &  sw_dn_diffuse_surf_canopy=>null(), sw_dn_direct_surf_canopy=>null()
+
+    class(field_3rb), pointer :: &
+         &  f_lw_dn_surf_canopy=>null(), &
+         &  f_sw_dn_diffuse_surf_canopy=>null(), f_sw_dn_direct_surf_canopy=>null()
+
+
+    real(jprb), pointer, dimension(:) :: &
+         &  cloud_cover_lw=>null(), cloud_cover_sw=>null()
+
+    class(field_2rb), pointer :: &
+         &  f_cloud_cover_lw=>null(), f_cloud_cover_sw=>null()
+
+
+    real(jprb), pointer, dimension(:,:) :: &  ! (ncol,nlev+1)
+          &  lw_derivatives=>null()
+    class(field_3rb), pointer :: &  ! (ncol,nlev+1,nblocks)
+          &  f_lw_derivatives=>null()
+   
+  contains
+    procedure :: init           => flux_field_init
+    procedure :: final          => flux_field_final
+    procedure :: update_view    => flux_field_update_view
+    procedure :: update_flux => flux_field_update_flux
+ 
+  end type flux_field_type
+
 
 contains
 
@@ -912,5 +1017,912 @@ contains
     if (lhook) call dr_hook('radiation_radiation_field_type:aerosol_field_update_aerosol',1,hook_handle)
 
   end subroutine aerosol_field_update_aerosol
+
+
+!-----------------------------------------------------------------------
+! flux_field_type procedures
+
+  !---------------------------------------------------------------------
+  ! Initialise flux_field_type
+  subroutine flux_field_init(this, nblocks, config, istartcol, iendcol, nlev)
+
+    use yomhook,          only : lhook, dr_hook, jphook
+    use radiation_io,     only : nulerr, radiation_abort
+    use radiation_config, only: config_type
+
+    class(flux_field_type), intent(inout) :: this
+    type(config_type), intent(in)         :: config
+    integer, intent(in)                   :: nblocks  ! Total number of blocks
+    integer, intent(in)                   :: istartcol, iendcol, nlev
+
+    real(jphook) :: hook_handle
+
+    if (lhook) call dr_hook('radiation_field_type:flux_field_init',0,hook_handle)
+
+    ! Allocate longwave arrays
+    if (config%do_lw) then
+      call field_new(this%f_lw_up,lbounds=[istartcol,1,1], ubounds=[iendcol,nlev+1,nblocks], persistent=.true.)
+      call field_new(this%f_lw_dn,lbounds=[istartcol,1,1], ubounds=[iendcol,nlev+1,nblocks], persistent=.true.)
+      if (config%do_clear) then
+        call field_new(this%f_lw_up_clear,lbounds=[istartcol,1,1], &
+            &                             ubounds=[iendcol,nlev+1,nblocks], persistent=.true.)
+        call field_new(this%f_lw_dn_clear,lbounds=[istartcol,1,1], &
+            &                             ubounds=[iendcol,nlev+1,nblocks], persistent=.true.)
+      end if
+
+      if (config%do_save_spectral_flux) then
+        if (config%n_spec_lw == 0) then
+          write(nulerr,'(a)') '*** Error: number of LW spectral points to save not yet defined ' &
+               & // 'so cannot allocate spectral flux arrays'
+          call radiation_abort()
+        end if
+
+        call field_new(this%f_lw_up_band,lbounds=[1,istartcol,1,1], &
+            &                            ubounds=[config%n_spec_lw,iendcol,nlev+1,nblocks], persistent=.true.)
+        call field_new(this%f_lw_dn_band,lbounds=[1,istartcol,1,1], &
+            &                            ubounds=[config%n_spec_lw,iendcol,nlev+1,nblocks], persistent=.true.)
+        if (config%do_clear) then
+          call field_new(this%f_lw_up_clear_band,lbounds=[1,istartcol,1,1], &
+              & ubounds=[config%n_spec_lw,iendcol,nlev+1,nblocks], persistent=.true.)
+          call field_new(this%f_lw_dn_clear_band,lbounds=[1,istartcol,1,1], &
+              & ubounds=[config%n_spec_lw,iendcol,nlev+1,nblocks], persistent=.true.)
+        end if
+      end if
+
+      if (config%do_lw_derivatives) then
+        call field_new(this%f_lw_derivatives,lbounds=[istartcol,1,1], &
+            &                                ubounds=[iendcol,nlev+1,nblocks], persistent=.true.)
+      end if
+
+      if (config%do_toa_spectral_flux) then
+        if (config%n_bands_lw == 0) then
+          write(nulerr,'(a)') '*** Error: number of LW bands not yet defined ' &
+               & // 'so cannot allocate TOA spectral flux arrays'
+          call radiation_abort()
+        end if
+        call field_new(this%f_lw_up_toa_band,lbounds=[1,istartcol,1], &
+            & ubounds=[config%n_bands_lw, iendcol,nblocks], persistent=.true.)
+        if (config%do_clear) then
+          call field_new(this%f_lw_up_toa_clear_band,lbounds=[1,istartcol,1], &
+            & ubounds=[config%n_bands_lw, iendcol,nblocks], persistent=.true.)
+        end if
+      end if
+
+      ! Allocate g-point downwelling fluxes at surface, and TOA fluxes
+      call field_new(this%f_lw_dn_surf_g,lbounds=[1,istartcol,1], &
+          & ubounds=[config%n_g_lw,iendcol,nblocks], persistent=.true.)
+      call field_new(this%f_lw_up_toa_g ,lbounds=[1,istartcol,1], &
+          & ubounds=[config%n_g_lw,iendcol,nblocks], persistent=.true.)
+      if (config%do_clear) then
+        call field_new(this%f_lw_dn_surf_clear_g,lbounds=[1,istartcol,1], &
+            & ubounds=[config%n_g_lw,iendcol,nblocks], persistent=.true.)
+        call field_new(this%f_lw_up_toa_clear_g ,lbounds=[1,istartcol,1], &
+            & ubounds=[config%n_g_lw,iendcol,nblocks], persistent=.true.)
+      end if
+
+      if (config%do_canopy_fluxes_lw) then
+        ! Downward fluxes at top of canopy at the spectral resolution
+        ! used in the canopy radiative transfer scheme
+        call field_new(this%f_lw_dn_surf_canopy,lbounds=[1,istartcol,1], &
+            & ubounds=[config%n_canopy_bands_lw,iendcol,nblocks], persistent=.true.)
+      end if
+    end if
+
+    ! Allocate shortwave arrays
+    if (config%do_sw) then
+      call field_new(this%f_sw_up,lbounds=[istartcol,1,1], ubounds=[iendcol,nlev+1,nblocks], persistent=.true.)
+      call field_new(this%f_sw_dn,lbounds=[istartcol,1,1], ubounds=[iendcol,nlev+1,nblocks], persistent=.true.)
+      if (config%do_sw_direct) then
+        call field_new(this%f_sw_dn_direct,lbounds=[istartcol,1,1], &
+            & ubounds=[iendcol,nlev+1,nblocks], persistent=.true.)
+      end if
+      if (config%do_clear) then
+        call field_new(this%f_sw_up_clear,lbounds=[istartcol,1,1], &
+            & ubounds=[iendcol,nlev+1,nblocks], persistent=.true.)
+        call field_new(this%f_sw_dn_clear,lbounds=[istartcol,1,1], &
+            & ubounds=[iendcol,nlev+1,nblocks], persistent=.true.)
+        if (config%do_sw_direct) then
+          call field_new(this%f_sw_dn_direct_clear,lbounds=[istartcol,1,1], &
+              & ubounds=[iendcol,nlev+1,nblocks], persistent=.true.)
+        end if
+      end if
+
+      if (config%do_save_spectral_flux) then
+        if (config%n_spec_sw == 0) then
+          write(nulerr,'(a)') '*** Error: number of SW spectral points to save not yet defined ' &
+               & // 'so cannot allocate spectral flux arrays'
+          call radiation_abort()
+        end if
+
+        call field_new(this%f_sw_up_band,lbounds=[1,istartcol,1,1], &
+            & ubounds=[config%n_spec_sw,iendcol,nlev+1,nblocks], persistent=.true.)
+        call field_new(this%f_sw_dn_band,lbounds=[1,istartcol,1,1], &
+            & ubounds=[config%n_spec_sw,iendcol,nlev+1,nblocks], persistent=.true.)
+
+        if (config%do_sw_direct) then
+          call field_new(this%f_sw_dn_direct_band,lbounds=[1,istartcol,1,1], &
+                & ubounds=[config%n_spec_sw,iendcol,nlev+1,nblocks], persistent=.true.)
+        end if
+        if (config%do_clear) then
+          call field_new(this%f_sw_up_clear_band,lbounds=[1,istartcol,1,1], &
+                & ubounds=[config%n_spec_sw,iendcol,nlev+1,nblocks], persistent=.true.)
+          call field_new(this%f_sw_dn_clear_band,lbounds=[1,istartcol,1,1], &
+                & ubounds=[config%n_spec_sw,iendcol,nlev+1,nblocks], persistent=.true.)
+          if (config%do_sw_direct) then
+            call field_new(this%f_sw_dn_direct_clear_band,lbounds=[1,istartcol,1,1], &
+                & ubounds=[config%n_spec_sw,iendcol, nlev+1,nblocks], persistent=.true.)
+          end if
+        end if
+      end if
+
+      if (config%do_surface_sw_spectral_flux) then
+        if (config%n_bands_sw == 0) then
+          write(nulerr,'(a)') '*** Error: number of SW bands not yet defined ' &
+               & // 'so cannot allocate TOA spectral flux arrays'
+          call radiation_abort()
+        end if
+        call field_new(this%f_sw_dn_surf_band,lbounds=[1,istartcol,1], &
+                & ubounds=[config%n_bands_sw,iendcol,nblocks], persistent=.true.)
+        call field_new(this%f_sw_dn_direct_surf_band,lbounds=[1,istartcol,1], &
+                & ubounds=[config%n_bands_sw,iendcol,nblocks], persistent=.true.)
+        if (config%do_clear) then
+          call field_new(this%f_sw_dn_surf_clear_band,lbounds=[1,istartcol,1], &
+                  & ubounds=[config%n_bands_sw,iendcol,nblocks], persistent=.true.)
+          call field_new(this%f_sw_dn_direct_surf_clear_band,lbounds=[1,istartcol,1], &
+                  & ubounds=[config%n_bands_sw,iendcol,nblocks], persistent=.true.)
+        end if
+      end if
+
+      if (config%do_toa_spectral_flux) then
+        if (config%n_bands_sw == 0) then
+          write(nulerr,'(a)') '*** Error: number of SW bands not yet defined ' &
+               & // 'so cannot allocate surface spectral flux arrays'
+          call radiation_abort()
+        end if
+        call field_new(this%f_sw_dn_toa_band,lbounds=[1,istartcol,1], &
+            & ubounds=[config%n_bands_sw, iendcol,nblocks], persistent=.true.)
+        call field_new(this%f_sw_up_toa_band,lbounds=[1,istartcol,1], &
+            & ubounds=[config%n_bands_sw, iendcol,nblocks], persistent=.true.)
+        if (config%do_clear) then
+          call field_new(this%f_sw_up_toa_clear_band,lbounds=[1,istartcol,1], &
+              & ubounds=[config%n_bands_sw, iendcol,nblocks], persistent=.true.)
+        end if
+      end if
+
+      ! Allocate g-point downwelling fluxes at surface, and TOA fluxes
+      call field_new(this%f_sw_dn_diffuse_surf_g,lbounds=[1,istartcol,1], &
+          & ubounds=[config%n_g_sw,iendcol,nblocks], persistent=.true.)
+      call field_new(this%f_sw_dn_direct_surf_g ,lbounds=[1,istartcol,1], &
+          & ubounds=[config%n_g_sw,iendcol,nblocks], persistent=.true.)
+      call field_new(this%f_sw_dn_toa_g         ,lbounds=[1,istartcol,1], &
+          & ubounds=[config%n_g_sw,iendcol,nblocks], persistent=.true.)
+      call field_new(this%f_sw_up_toa_g         ,lbounds=[1,istartcol,1], &
+          & ubounds=[config%n_g_sw,iendcol,nblocks], persistent=.true.)
+      if (config%do_clear) then
+        call field_new(this%f_sw_dn_diffuse_surf_clear_g,lbounds=[1,istartcol,1], &
+            & ubounds=[config%n_g_sw,iendcol,nblocks], persistent=.true.)
+        call field_new(this%f_sw_dn_direct_surf_clear_g ,lbounds=[1,istartcol,1], &
+            & ubounds=[config%n_g_sw,iendcol,nblocks], persistent=.true.)
+        call field_new(this%f_sw_up_toa_clear_g         ,lbounds=[1,istartcol,1], &
+            & ubounds=[config%n_g_sw,iendcol,nblocks], persistent=.true.)
+      end if
+
+      if (config%do_canopy_fluxes_sw) then
+        ! Downward fluxes at top of canopy at the spectral resolution
+        ! used in the canopy radiative transfer scheme
+        call field_new(this%f_sw_dn_diffuse_surf_canopy,lbounds=[1,istartcol,1], &
+            & ubounds=[config%n_canopy_bands_sw,iendcol,nblocks], persistent=.true.)
+        call field_new(this%f_sw_dn_direct_surf_canopy ,lbounds=[1,istartcol,1], &
+            & ubounds=[config%n_canopy_bands_sw,iendcol,nblocks], persistent=.true.)
+      end if
+    end if
+
+    ! Allocate cloud cover arrays
+    call field_new(this%f_cloud_cover_lw,lbounds=[istartcol,1], &
+          & ubounds=[iendcol,nblocks], persistent=.true., init_value=-1.0_jprb)
+    call field_new(this%f_cloud_cover_sw,lbounds=[istartcol,1], &
+          & ubounds=[iendcol,nblocks], persistent=.true., init_value=-1.0_jprb)
+
+    if (lhook) call dr_hook('radiation_flux:allocate',1,hook_handle)
+
+    if (lhook) call dr_hook('radiation_radiation_field_type:flux_field_init',1,hook_handle)
+
+  end subroutine flux_field_init
+
+
+
+  !---------------------------------------------------------------------
+  ! flux_field_type finalisation
+  subroutine flux_field_final(this)
+
+    use yomhook,     only : lhook, dr_hook, jphook
+
+    class(flux_field_type), intent(inout) :: this
+
+    real(jphook) :: hook_handle
+
+    if (lhook) call dr_hook('radiation_field_type:flux_field_final',0,hook_handle)
+
+    if (associated(this%f_lw_up)) then
+      call field_delete(this%f_lw_up)
+    end if
+    this%f_lw_up=>null()
+    this%lw_up=>null()
+
+    if (associated(this%f_lw_dn)) then
+      call field_delete(this%f_lw_dn)
+    end if
+    this%f_lw_dn=>null()
+    this%lw_dn=>null()
+
+    if (associated(this%f_sw_up)) then
+      call field_delete(this%f_sw_up)
+    end if
+    this%f_sw_up=>null()
+    this%sw_up=>null()
+
+    if (associated(this%f_sw_dn)) then
+      call field_delete(this%f_sw_dn)
+    end if
+    this%f_sw_dn=>null()
+    this%sw_dn=>null()
+
+    if (associated(this%f_sw_dn_direct)) then
+      call field_delete(this%f_sw_dn_direct)
+    end if
+    this%f_sw_dn_direct=>null()
+    this%sw_dn_direct=>null()
+
+    if (associated(this%f_lw_up_clear)) then
+      call field_delete(this%f_lw_up_clear)
+    end if
+    this%f_lw_up_clear=>null()
+    this%lw_up_clear=>null()
+
+    if (associated(this%f_lw_dn_clear)) then
+      call field_delete(this%f_lw_dn_clear)
+    end if
+    this%f_lw_dn_clear=>null()
+    this%lw_dn_clear=>null()
+
+    if (associated(this%f_sw_up_clear)) then
+      call field_delete(this%f_sw_up_clear)
+    end if
+    this%f_sw_up_clear=>null()
+    this%sw_up_clear=>null()
+
+    if (associated(this%f_sw_dn_clear)) then
+      call field_delete(this%f_sw_dn_clear)
+    end if
+    this%f_sw_dn_clear=>null()
+    this%sw_dn_clear=>null()
+
+    if (associated(this%f_sw_dn_direct_clear)) then
+      call field_delete(this%f_sw_dn_direct_clear)
+    end if
+    this%f_sw_dn_direct_clear=>null()
+    this%sw_dn_direct_clear=>null()
+
+    if (associated(this%f_lw_up_band)) then
+      call field_delete(this%f_lw_up_band)
+    end if
+    this%f_lw_up_band=>null()
+    this%lw_up_band=>null()
+
+    if (associated(this%f_lw_dn_band)) then
+      call field_delete(this%f_lw_dn_band)
+    end if
+    this%f_lw_dn_band=>null()
+    this%lw_dn_band=>null()
+
+    if (associated(this%f_sw_up_band)) then
+      call field_delete(this%f_sw_up_band)
+    end if
+    this%f_sw_up_band=>null()
+    this%sw_up_band=>null()
+
+    if (associated(this%f_sw_dn_band)) then
+      call field_delete(this%f_sw_dn_band)
+    end if
+    this%f_sw_dn_band=>null()
+    this%sw_dn_band=>null()
+
+    if (associated(this%f_sw_dn_direct_band)) then
+      call field_delete(this%f_sw_dn_direct_band)
+    end if
+    this%f_sw_dn_direct_band=>null()
+    this%sw_dn_direct_band=>null()
+
+    if (associated(this%f_lw_up_clear_band)) then
+      call field_delete(this%f_lw_up_clear_band)
+    end if
+    this%f_lw_up_clear_band=>null()
+    this%lw_up_clear_band=>null()
+
+    if (associated(this%f_lw_dn_clear_band)) then
+      call field_delete(this%f_lw_dn_clear_band)
+    end if
+    this%f_lw_dn_clear_band=>null()
+    this%lw_dn_clear_band=>null()
+
+    if (associated(this%f_sw_up_clear_band)) then
+      call field_delete(this%f_sw_up_clear_band)
+    end if
+    this%f_sw_up_clear_band=>null()
+    this%sw_up_clear_band=>null()
+
+    if (associated(this%f_sw_dn_clear_band)) then
+      call field_delete(this%f_sw_dn_clear_band)
+    end if
+    this%f_sw_dn_clear_band=>null()
+    this%sw_dn_clear_band=>null()
+
+    if (associated(this%f_sw_dn_direct_clear_band)) then
+      call field_delete(this%f_sw_dn_direct_clear_band)
+    end if
+    this%f_sw_dn_direct_clear_band=>null()
+    this%sw_dn_direct_clear_band=>null()
+
+    if (associated(this%f_lw_dn_surf_g)) then
+      call field_delete(this%f_lw_dn_surf_g)
+    end if
+    this%f_lw_dn_surf_g=>null()
+    this%lw_dn_surf_g=>null()
+
+    if (associated(this%f_lw_dn_surf_clear_g)) then
+      call field_delete(this%f_lw_dn_surf_clear_g)
+    end if
+    this%f_lw_dn_surf_clear_g=>null()
+    this%lw_dn_surf_clear_g=>null()
+
+    if (associated(this%f_sw_dn_diffuse_surf_g)) then
+      call field_delete(this%f_sw_dn_diffuse_surf_g)
+    end if
+    this%f_sw_dn_diffuse_surf_g=>null()
+    this%sw_dn_diffuse_surf_g=>null()
+
+    if (associated(this%f_sw_dn_direct_surf_g)) then
+      call field_delete(this%f_sw_dn_direct_surf_g)
+    end if
+    this%f_sw_dn_direct_surf_g=>null()
+    this%sw_dn_direct_surf_g=>null()
+
+    if (associated(this%f_sw_dn_diffuse_surf_clear_g)) then
+      call field_delete(this%f_sw_dn_diffuse_surf_clear_g)
+    end if
+    this%f_sw_dn_diffuse_surf_clear_g=>null()
+    this%sw_dn_diffuse_surf_clear_g=>null()
+
+    if (associated(this%f_sw_dn_direct_surf_clear_g)) then
+      call field_delete(this%f_sw_dn_direct_surf_clear_g)
+    end if
+    this%f_sw_dn_direct_surf_clear_g=>null()
+    this%sw_dn_direct_surf_clear_g=>null()
+
+    if (associated(this%f_lw_up_toa_g)) then
+      call field_delete(this%f_lw_up_toa_g)
+    end if
+    this%f_lw_up_toa_g=>null()
+    this%lw_up_toa_g=>null()
+
+    if (associated(this%f_lw_up_toa_clear_g)) then
+      call field_delete(this%f_lw_up_toa_clear_g)
+    end if
+    this%f_lw_up_toa_clear_g=>null()
+    this%lw_up_toa_clear_g=>null()
+
+    if (associated(this%f_sw_dn_toa_g)) then
+      call field_delete(this%f_sw_dn_toa_g)
+    end if
+    this%f_sw_dn_toa_g=>null()
+    this%sw_dn_toa_g=>null()
+
+    if (associated(this%f_sw_up_toa_g)) then
+      call field_delete(this%f_sw_up_toa_g)
+    end if
+    this%f_sw_up_toa_g=>null()
+    this%sw_up_toa_g=>null()
+
+    if (associated(this%f_sw_up_toa_clear_g)) then
+      call field_delete(this%f_sw_up_toa_clear_g)
+    end if
+    this%f_sw_up_toa_clear_g=>null()
+    this%sw_up_toa_clear_g=>null()
+
+    if (associated(this%f_sw_dn_surf_band)) then
+      call field_delete(this%f_sw_dn_surf_band)
+    end if
+    this%f_sw_dn_surf_band=>null()
+    this%sw_dn_surf_band=>null()
+
+    if (associated(this%f_sw_dn_direct_surf_band)) then
+      call field_delete(this%f_sw_dn_direct_surf_band)
+    end if
+    this%f_sw_dn_direct_surf_band=>null()
+    this%sw_dn_direct_surf_band=>null()
+
+    if (associated(this%f_sw_dn_surf_clear_band)) then
+      call field_delete(this%f_sw_dn_surf_clear_band)
+    end if
+    this%f_sw_dn_surf_clear_band=>null()
+    this%sw_dn_surf_clear_band=>null()
+
+    if (associated(this%f_sw_dn_direct_surf_clear_band)) then
+      call field_delete(this%f_sw_dn_direct_surf_clear_band)
+    end if
+    this%f_sw_dn_direct_surf_clear_band=>null()
+    this%sw_dn_direct_surf_clear_band=>null()
+
+    if (associated(this%f_lw_up_toa_band)) then
+      call field_delete(this%f_lw_up_toa_band)
+    end if
+    this%f_lw_up_toa_band=>null()
+    this%lw_up_toa_band=>null()
+
+    if (associated(this%f_lw_up_toa_clear_band)) then
+      call field_delete(this%f_lw_up_toa_clear_band)
+    end if
+    this%f_lw_up_toa_clear_band=>null()
+    this%lw_up_toa_clear_band=>null()
+
+    if (associated(this%f_sw_dn_toa_band)) then
+      call field_delete(this%f_sw_dn_toa_band)
+    end if
+    this%f_sw_dn_toa_band=>null()
+    this%sw_dn_toa_band=>null()
+
+    if (associated(this%f_sw_up_toa_band)) then
+      call field_delete(this%f_sw_up_toa_band)
+    end if
+    this%f_sw_up_toa_band=>null()
+    this%sw_up_toa_band=>null()
+
+    if (associated(this%f_sw_up_toa_clear_band)) then
+      call field_delete(this%f_sw_up_toa_clear_band)
+    end if
+    this%f_sw_up_toa_clear_band=>null()
+    this%sw_up_toa_clear_band=>null()
+
+    if (associated(this%f_lw_dn_surf_canopy)) then
+      call field_delete(this%f_lw_dn_surf_canopy)
+    end if
+    this%f_lw_dn_surf_canopy=>null()
+    this%lw_dn_surf_canopy=>null()
+
+    if (associated(this%f_sw_dn_diffuse_surf_canopy)) then
+      call field_delete(this%f_sw_dn_diffuse_surf_canopy)
+    end if
+    this%f_sw_dn_diffuse_surf_canopy=>null()
+    this%sw_dn_diffuse_surf_canopy=>null()
+
+    if (associated(this%f_sw_dn_direct_surf_canopy)) then
+      call field_delete(this%f_sw_dn_direct_surf_canopy)
+    end if
+    this%f_sw_dn_direct_surf_canopy=>null()
+    this%sw_dn_direct_surf_canopy=>null()
+
+    if (associated(this%f_cloud_cover_lw)) then
+      call field_delete(this%f_cloud_cover_lw)
+    end if
+    this%f_cloud_cover_lw=>null()
+    this%cloud_cover_lw=>null()
+
+    if (associated(this%f_cloud_cover_sw)) then
+      call field_delete(this%f_cloud_cover_sw)
+    end if
+    this%f_cloud_cover_sw=>null()
+    this%cloud_cover_sw=>null()
+
+    if (associated(this%f_lw_derivatives)) then
+      call field_delete(this%f_lw_derivatives)
+    end if
+    this%f_lw_derivatives=>null()
+    this%lw_derivatives=>null()
+
+    if (lhook) call dr_hook('radiation_field_type:flux_field_final',1,hook_handle)
+
+  end subroutine flux_field_final
+
+  !---------------------------------------------------------------------
+  ! Update view pointers of flux_field_type
+  subroutine flux_field_update_view(this, block_index)
+
+    use yomhook,     only : lhook, dr_hook, jphook
+
+    class(flux_field_type), intent(inout)  :: this
+    integer, intent(in)                     :: block_index
+
+    real(jphook) :: hook_handle
+
+    if (lhook) call dr_hook('radiation_field_type:flux_field_update_view',0,hook_handle)
+
+    if (associated(this%f_lw_up)) then
+      this%lw_up => this%f_lw_up%get_view(block_index)
+    end if
+
+    if (associated(this%f_lw_dn)) then
+      this%lw_dn => this%f_lw_dn%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_up)) then
+      this%sw_up => this%f_sw_up%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_dn)) then
+      this%sw_dn => this%f_sw_dn%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_dn_direct)) then
+      this%sw_dn_direct => this%f_sw_dn_direct%get_view(block_index)
+    end if
+
+    if (associated(this%f_lw_up_clear)) then
+      this%lw_up_clear => this%f_lw_up_clear%get_view(block_index)
+    end if
+
+    if (associated(this%f_lw_dn_clear)) then
+      this%lw_dn_clear => this%f_lw_dn_clear%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_up_clear)) then
+      this%sw_up_clear => this%f_sw_up_clear%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_dn_clear)) then
+      this%sw_dn_clear => this%f_sw_dn_clear%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_dn_direct_clear)) then
+      this%sw_dn_direct_clear => this%f_sw_dn_direct_clear%get_view(block_index)
+    end if
+
+    if (associated(this%f_lw_up_band)) then
+      this%lw_up_band => this%f_lw_up_band%get_view(block_index)
+    end if
+
+    if (associated(this%f_lw_dn_band)) then
+      this%lw_dn_band => this%f_lw_dn_band%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_up_band)) then
+      this%sw_up_band => this%f_sw_up_band%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_dn_band)) then
+      this%sw_dn_band => this%f_sw_dn_band%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_dn_direct_band)) then
+      this%sw_dn_direct_band => this%f_sw_dn_direct_band%get_view(block_index)
+    end if
+
+    if (associated(this%f_lw_up_clear_band)) then
+      this%lw_up_clear_band => this%f_lw_up_clear_band%get_view(block_index)
+    end if
+
+    if (associated(this%f_lw_dn_clear_band)) then
+      this%lw_dn_clear_band => this%f_lw_dn_clear_band%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_up_clear_band)) then
+      this%sw_up_clear_band => this%f_sw_up_clear_band%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_dn_clear_band)) then
+      this%sw_dn_clear_band => this%f_sw_dn_clear_band%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_dn_direct_clear_band)) then
+      this%sw_dn_direct_clear_band => this%f_sw_dn_direct_clear_band%get_view(block_index)
+    end if
+
+    if (associated(this%f_lw_dn_surf_g)) then
+      this%lw_dn_surf_g => this%f_lw_dn_surf_g%get_view(block_index)
+    end if
+
+    if (associated(this%f_lw_dn_surf_clear_g)) then
+      this%lw_dn_surf_clear_g => this%f_lw_dn_surf_clear_g%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_dn_diffuse_surf_g)) then
+      this%sw_dn_diffuse_surf_g => this%f_sw_dn_diffuse_surf_g%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_dn_direct_surf_g)) then
+      this%sw_dn_direct_surf_g => this%f_sw_dn_direct_surf_g%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_dn_diffuse_surf_clear_g)) then
+      this%sw_dn_diffuse_surf_clear_g => this%f_sw_dn_diffuse_surf_clear_g%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_dn_direct_surf_clear_g)) then
+      this%sw_dn_direct_surf_clear_g => this%f_sw_dn_direct_surf_clear_g%get_view(block_index)
+    end if
+
+    if (associated(this%f_lw_up_toa_g)) then
+      this%lw_up_toa_g => this%f_lw_up_toa_g%get_view(block_index)
+    end if
+
+    if (associated(this%f_lw_up_toa_clear_g)) then
+      this%lw_up_toa_clear_g => this%f_lw_up_toa_clear_g%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_dn_toa_g)) then
+      this%sw_dn_toa_g => this%f_sw_dn_toa_g%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_up_toa_g)) then
+      this%sw_up_toa_g => this%f_sw_up_toa_g%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_up_toa_clear_g)) then
+      this%sw_up_toa_clear_g => this%f_sw_up_toa_clear_g%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_dn_surf_band)) then
+      this%sw_dn_surf_band => this%f_sw_dn_surf_band%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_dn_direct_surf_band)) then
+      this%sw_dn_direct_surf_band => this%f_sw_dn_direct_surf_band%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_dn_surf_clear_band)) then
+      this%sw_dn_surf_clear_band => this%f_sw_dn_surf_clear_band%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_dn_direct_surf_clear_band)) then
+      this%sw_dn_direct_surf_clear_band => this%f_sw_dn_direct_surf_clear_band%get_view(block_index)
+    end if
+
+    if (associated(this%f_lw_up_toa_band)) then
+      this%lw_up_toa_band => this%f_lw_up_toa_band%get_view(block_index)
+    end if
+
+    if (associated(this%f_lw_up_toa_clear_band)) then
+      this%lw_up_toa_clear_band => this%f_lw_up_toa_clear_band%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_dn_toa_band)) then
+      this%sw_dn_toa_band => this%f_sw_dn_toa_band%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_up_toa_band)) then
+      this%sw_up_toa_band => this%f_sw_up_toa_band%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_up_toa_clear_band)) then
+      this%sw_up_toa_clear_band => this%f_sw_up_toa_clear_band%get_view(block_index)
+    end if
+
+    if (associated(this%f_lw_dn_surf_canopy)) then
+      this%lw_dn_surf_canopy => this%f_lw_dn_surf_canopy%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_dn_diffuse_surf_canopy)) then
+      this%sw_dn_diffuse_surf_canopy => this%f_sw_dn_diffuse_surf_canopy%get_view(block_index)
+    end if
+
+    if (associated(this%f_sw_dn_direct_surf_canopy)) then
+      this%sw_dn_direct_surf_canopy => this%f_sw_dn_direct_surf_canopy%get_view(block_index)
+    end if
+
+    if (associated(this%f_cloud_cover_lw)) then
+      this%cloud_cover_lw => this%f_cloud_cover_lw%get_view(block_index)
+    end if
+
+    if (associated(this%f_cloud_cover_sw)) then
+      this%cloud_cover_sw => this%f_cloud_cover_sw%get_view(block_index)
+    end if
+
+    if (associated(this%f_lw_derivatives)) then
+      this%lw_derivatives => this%f_lw_derivatives%get_view(block_index)
+    end if
+
+    if (lhook) call dr_hook('radiation_radiation_field_type:flux_field_update_view',1,hook_handle)
+
+  end subroutine flux_field_update_view
+
+  !---------------------------------------------------------------------
+  ! Update flux pointers of flux_field_type
+  subroutine flux_field_update_flux(this, flux)
+
+    use yomhook,     only : lhook, dr_hook, jphook
+
+    class(flux_field_type), intent(inout) :: this
+    class(flux_type), intent(inout)       :: flux
+
+    real(jphook) :: hook_handle
+
+    if (lhook) call dr_hook('radiation_field_type:flux_field_update_flux',0,hook_handle)
+
+    if (associated(this%lw_up)) then
+      flux%lw_up => this%lw_up
+    end if
+
+    if (associated(this%lw_dn)) then
+      flux%lw_dn => this%lw_dn
+    end if
+
+    if (associated(this%sw_up)) then
+      flux%sw_up => this%sw_up
+    end if
+
+    if (associated(this%sw_dn)) then
+      flux%sw_dn => this%sw_dn
+    end if
+
+    if (associated(this%sw_dn_direct)) then
+      flux%sw_dn_direct => this%sw_dn_direct
+    end if
+
+    if (associated(this%lw_up_clear)) then
+      flux%lw_up_clear => this%lw_up_clear
+    end if
+
+    if (associated(this%lw_dn_clear)) then
+      flux%lw_dn_clear => this%lw_dn_clear
+    end if
+
+    if (associated(this%sw_up_clear)) then
+      flux%sw_up_clear => this%sw_up_clear
+    end if
+
+    if (associated(this%sw_dn_clear)) then
+      flux%sw_dn_clear => this%sw_dn_clear
+    end if
+
+    if (associated(this%sw_dn_direct_clear)) then
+      flux%sw_dn_direct_clear => this%sw_dn_direct_clear
+    end if
+
+    if (associated(this%lw_up_band)) then
+      flux%lw_up_band => this%lw_up_band
+    end if
+
+    if (associated(this%lw_dn_band)) then
+      flux%lw_dn_band => this%lw_dn_band
+    end if
+
+    if (associated(this%sw_up_band)) then
+      flux%sw_up_band => this%sw_up_band
+    end if
+
+    if (associated(this%sw_dn_band)) then
+      flux%sw_dn_band => this%sw_dn_band
+    end if
+
+    if (associated(this%sw_dn_direct_band)) then
+      flux%sw_dn_direct_band => this%sw_dn_direct_band
+    end if
+
+    if (associated(this%lw_up_clear_band)) then
+      flux%lw_up_clear_band => this%lw_up_clear_band
+    end if
+
+    if (associated(this%lw_dn_clear_band)) then
+      flux%lw_dn_clear_band => this%lw_dn_clear_band
+    end if
+
+    if (associated(this%sw_up_clear_band)) then
+      flux%sw_up_clear_band => this%sw_up_clear_band
+    end if
+
+    if (associated(this%sw_dn_clear_band)) then
+      flux%sw_dn_clear_band => this%sw_dn_clear_band
+    end if
+
+    if (associated(this%sw_dn_direct_clear_band)) then
+      flux%sw_dn_direct_clear_band => this%sw_dn_direct_clear_band
+    end if
+
+    if (associated(this%lw_dn_surf_g)) then
+      flux%lw_dn_surf_g => this%lw_dn_surf_g
+    end if
+
+    if (associated(this%lw_dn_surf_clear_g)) then
+      flux%lw_dn_surf_clear_g => this%lw_dn_surf_clear_g
+    end if
+
+    if (associated(this%sw_dn_diffuse_surf_g)) then
+      flux%sw_dn_diffuse_surf_g => this%sw_dn_diffuse_surf_g
+    end if
+
+    if (associated(this%sw_dn_direct_surf_g)) then
+      flux%sw_dn_direct_surf_g => this%sw_dn_direct_surf_g
+    end if
+
+    if (associated(this%sw_dn_diffuse_surf_clear_g)) then
+      flux%sw_dn_diffuse_surf_clear_g => this%sw_dn_diffuse_surf_clear_g
+    end if
+
+    if (associated(this%sw_dn_direct_surf_clear_g)) then
+      flux%sw_dn_direct_surf_clear_g => this%sw_dn_direct_surf_clear_g
+    end if
+
+    if (associated(this%lw_up_toa_g)) then
+      flux%lw_up_toa_g => this%lw_up_toa_g
+    end if
+
+    if (associated(this%lw_up_toa_clear_g)) then
+      flux%lw_up_toa_clear_g => this%lw_up_toa_clear_g
+    end if
+
+    if (associated(this%sw_dn_toa_g)) then
+      flux%sw_dn_toa_g => this%sw_dn_toa_g
+    end if
+
+    if (associated(this%sw_up_toa_g)) then
+      flux%sw_up_toa_g => this%sw_up_toa_g
+    end if
+
+    if (associated(this%sw_up_toa_clear_g)) then
+      flux%sw_up_toa_clear_g => this%sw_up_toa_clear_g
+    end if
+
+    if (associated(this%sw_dn_surf_band)) then
+      flux%sw_dn_surf_band => this%sw_dn_surf_band
+    end if
+
+    if (associated(this%sw_dn_direct_surf_band)) then
+      flux%sw_dn_direct_surf_band => this%sw_dn_direct_surf_band
+    end if
+
+    if (associated(this%sw_dn_surf_clear_band)) then
+      flux%sw_dn_surf_clear_band => this%sw_dn_surf_clear_band
+    end if
+
+    if (associated(this%sw_dn_direct_surf_clear_band)) then
+      flux%sw_dn_direct_surf_clear_band => this%sw_dn_direct_surf_clear_band
+    end if
+
+    if (associated(this%lw_up_toa_band)) then
+      flux%lw_up_toa_band => this%lw_up_toa_band
+    end if
+
+    if (associated(this%lw_up_toa_clear_band)) then
+      flux%lw_up_toa_clear_band => this%lw_up_toa_clear_band
+    end if
+
+    if (associated(this%sw_dn_toa_band)) then
+      flux%sw_dn_toa_band => this%sw_dn_toa_band
+    end if
+
+    if (associated(this%sw_up_toa_band)) then
+      flux%sw_up_toa_band => this%sw_up_toa_band
+    end if
+
+    if (associated(this%sw_up_toa_clear_band)) then
+      flux%sw_up_toa_clear_band => this%sw_up_toa_clear_band
+    end if
+
+    if (associated(this%lw_dn_surf_canopy)) then
+      flux%lw_dn_surf_canopy => this%lw_dn_surf_canopy
+    end if
+
+    if (associated(this%sw_dn_diffuse_surf_canopy)) then
+      flux%sw_dn_diffuse_surf_canopy => this%sw_dn_diffuse_surf_canopy
+    end if
+
+    if (associated(this%sw_dn_direct_surf_canopy)) then
+      flux%sw_dn_direct_surf_canopy => this%sw_dn_direct_surf_canopy
+    end if
+
+    if (associated(this%cloud_cover_lw)) then
+      flux%cloud_cover_lw => this%cloud_cover_lw
+    end if
+
+    if (associated(this%cloud_cover_sw)) then
+      flux%cloud_cover_sw => this%cloud_cover_sw
+    end if
+
+    if (associated(this%lw_derivatives)) then
+      flux%lw_derivatives => this%lw_derivatives
+    end if
+
+    if (lhook) call dr_hook('radiation_radiation_field_type:flux_field_update_flux',1,hook_handle)
+
+  end subroutine flux_field_update_flux
 
 end module radiation_field_type_module

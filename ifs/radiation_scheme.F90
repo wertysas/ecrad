@@ -23,6 +23,7 @@ SUBROUTINE RADIATION_SCHEME &
       &  GAS, &
       &  YLCLOUD, &
       &  AEROSOL, &
+      &  FLUX, &
 #endif
      ! OPTIONAL ARGUMENTS for bit-identical results in tests
      &  PRE_LIQ, PRE_ICE, ISEED, PCLOUD_OVERLAP)
@@ -209,6 +210,7 @@ TYPE(THERMODYNAMICS_TYPE),  INTENT(INOUT) :: THERMODYNAMICS
 TYPE(GAS_TYPE),             INTENT(INOUT) :: GAS
 TYPE(CLOUD_TYPE),           INTENT(INOUT) :: YLCLOUD
 TYPE(AEROSOL_TYPE),         INTENT(INOUT) :: AEROSOL
+TYPE(FLUX_TYPE),         INTENT(INOUT) :: FLUX
 #endif
 
 ! Optional input arguments (Added for validating against ecrad standalone!)
@@ -224,8 +226,8 @@ TYPE(THERMODYNAMICS_TYPE) :: THERMODYNAMICS
 TYPE(GAS_TYPE)            :: GAS
 TYPE(CLOUD_TYPE)          :: YLCLOUD
 TYPE(AEROSOL_TYPE)        :: AEROSOL
-#endif HAVE_FIELD_API
 TYPE(FLUX_TYPE)           :: FLUX
+#endif HAVE_FIELD_API
 
 ! Cloud effective radii in microns
 REAL(KIND=JPRB)           :: ZRE_LIQUID_UM(KLON,KLEV)
@@ -311,8 +313,8 @@ IF (YRERAD%NAERMACC == 1) THEN
 ELSE
   CALL AEROSOL%ALLOCATE(KLON, 1, KLEV, 6) ! Tegen climatology
 ENDIF
-#endif
 CALL FLUX%ALLOCATE(RAD_CONFIG, 1, KLON, KLEV)
+#endif
 
 ! Set thermodynamic profiles: simply copy over the half-level
 ! pressure and temperature
@@ -721,8 +723,8 @@ CALL THERMODYNAMICS%DEALLOCATE
 CALL GAS%DEALLOCATE
 CALL YLCLOUD%DEALLOCATE
 CALL AEROSOL%DEALLOCATE
-#endif
 CALL FLUX%DEALLOCATE
+#endif
 
 END ASSOCIATE
 

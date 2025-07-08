@@ -23,6 +23,7 @@ SUBROUTINE RADIATION_SCHEME &
       &  GAS, &
       &  YLCLOUD, &
       &  AEROSOL, &
+      &  FLUX, &
 #endif
  & PRE_LIQ, PRE_ICE, ISEED, PCLOUD_OVERLAP)
 use parkind1 , only:&
@@ -35,6 +36,7 @@ use radiation_thermodynamics, only : thermodynamics_type
 use radiation_gas, only : gas_type
 use radiation_cloud, only: cloud_type
 use radiation_aerosol, only: aerosol_type
+use radiation_flux, only: flux_type
 TYPE(TRADIATION), INTENT(IN) :: YRADIATION
 INTEGER(KIND=JPIM),INTENT(IN) :: KIDIA
 INTEGER(KIND=JPIM),INTENT(IN) :: KFDIA
@@ -98,6 +100,7 @@ TYPE(THERMODYNAMICS_TYPE), INTENT(INOUT) :: THERMODYNAMICS
 TYPE(GAS_TYPE), INTENT(INOUT) :: GAS
 TYPE(CLOUD_TYPE), INTENT(INOUT) :: YLCLOUD
 TYPE(AEROSOL_TYPE), INTENT(INOUT) :: AEROSOL
+TYPE(FLUX_TYPE), INTENT(INOUT) :: FLUX
 #endif
 REAL(KIND=JPRB), INTENT(IN), OPTIONAL :: PRE_LIQ(KLON, KLEV)
 REAL(KIND=JPRB), INTENT(IN), OPTIONAL :: PRE_ICE(KLON, KLEV)

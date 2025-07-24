@@ -61,4 +61,5 @@ loki_transform_target(
     PLAN ${CMAKE_CURRENT_BINARY_DIR}/ecrad_loki_plan.${PREC}.cmake
     SOURCES ${ecrad_loki_SOURCE_DIRS}
     NO_PLAN_SOURCEDIR
+    DEFINITIONS HAVE_FIELD_API=ON
 )

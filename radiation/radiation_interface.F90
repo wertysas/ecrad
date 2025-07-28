@@ -222,10 +222,13 @@ contains
     use radiation_cloud,          only : cloud_type
     use radiation_aerosol,        only : aerosol_type
     use radiation_flux,           only : flux_type
+    !$loki remove
     use radiation_spartacus_sw,   only : solver_spartacus_sw
     use radiation_spartacus_lw,   only : solver_spartacus_lw
+    !$loki end remove
     use radiation_tripleclouds_sw,only : solver_tripleclouds_sw
     use radiation_tripleclouds_lw,only : solver_tripleclouds_lw
+    !$loki remove
     use radiation_mcica_sw,       only : solver_mcica_sw
     use radiation_mcica_lw,       only : solver_mcica_lw
     use radiation_cloudless_sw,   only : solver_cloudless_sw
@@ -233,6 +236,7 @@ contains
     use radiation_homogeneous_sw, only : solver_homogeneous_sw
     use radiation_homogeneous_lw, only : solver_homogeneous_lw
     use radiation_save,           only : save_radiative_properties
+    !$loki end remove
 
     ! Treatment of gas and hydrometeor optics 
     use radiation_monochromatic,  only : &
@@ -433,7 +437,7 @@ contains
         if (config%iverbose >= 2) then
           write(nulout,'(a)') 'Computing longwave fluxes'
         end if
-
+        !$loki remove 
         if (config%i_solver_lw == ISolverMcICA) then
           ! Compute fluxes using the McICA longwave solver
           call solver_mcica_lw(nlev,istartcol,iendcol, &
@@ -447,11 +451,13 @@ contains
                &  od_lw, ssa_lw, g_lw, od_lw_cloud, ssa_lw_cloud, g_lw_cloud, &
                &  planck_hl, lw_emission, lw_albedo, flux)
         else if (config%i_solver_lw == ISolverTripleclouds) then
+        !$loki end remove
           ! Compute fluxes using the Tripleclouds longwave solver
           call solver_tripleclouds_lw(nlev,istartcol,iendcol, &
                &  config, cloud, & 
                &  od_lw, ssa_lw, g_lw, od_lw_cloud, ssa_lw_cloud, g_lw_cloud, &
                &  planck_hl, lw_emission, lw_albedo, flux)
+        !$loki remove
         elseif (config%i_solver_lw == ISolverHomogeneous) then
           ! Compute fluxes using the homogeneous solver
           call solver_homogeneous_lw(nlev,istartcol,iendcol, &
@@ -464,6 +470,7 @@ contains
                &  config, od_lw, ssa_lw, g_lw, &
                &  planck_hl, lw_emission, lw_albedo, flux)
         end if
+        !$loki end remove
       end if
 
       if (config%do_sw) then
@@ -471,6 +478,7 @@ contains
           write(nulout,'(a)') 'Computing shortwave fluxes'
         end if
 
+        !$loki remove
         if (config%i_solver_sw == ISolverMcICA) then
           ! Compute fluxes using the McICA shortwave solver
           call solver_mcica_sw(nlev,istartcol,iendcol, &
@@ -486,12 +494,14 @@ contains
                &  g_sw_cloud, sw_albedo_direct, sw_albedo_diffuse, &
                &  incoming_sw, flux)
         else if (config%i_solver_sw == ISolverTripleclouds) then
+        !$loki end remove
           ! Compute fluxes using the Tripleclouds shortwave solver
           call solver_tripleclouds_sw(nlev,istartcol,iendcol, &
                &  config, single_level, cloud, & 
                &  od_sw, ssa_sw, g_sw, od_sw_cloud, ssa_sw_cloud, &
                &  g_sw_cloud, sw_albedo_direct, sw_albedo_diffuse, &
                &  incoming_sw, flux)
+        !$loki remove
         elseif (config%i_solver_sw == ISolverHomogeneous) then
           ! Compute fluxes using the homogeneous solver
           call solver_homogeneous_sw(nlev,istartcol,iendcol, &
@@ -506,6 +516,7 @@ contains
                &  sw_albedo_direct, sw_albedo_diffuse, &
                &  incoming_sw, flux)
         end if
+        !$loki end remove
       end if
 
       ! Store surface downwelling, and TOA, fluxes in bands from

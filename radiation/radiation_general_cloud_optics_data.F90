@@ -247,6 +247,7 @@ contains
        &                            cloud_fraction, &
        &                            water_path, effective_radius, &
        &                            od, scat_od, scat_asymmetry)
+  !$loki routine seq
 
     use yomhook, only : lhook, dr_hook, jphook
 

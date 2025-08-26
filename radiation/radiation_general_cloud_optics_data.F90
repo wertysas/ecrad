@@ -247,7 +247,6 @@ contains
        &                            cloud_fraction, &
        &                            water_path, effective_radius, &
        &                            od, scat_od, scat_asymmetry)
-  !$loki routine seq
 
     use yomhook, only : lhook, dr_hook, jphook
 
@@ -274,7 +273,7 @@ contains
     real(jprb) :: re_index, weight1, weight2
     integer :: ire
 
-    integer :: jcol, jlev, jg
+    integer :: jcol, jlev, jg, nlev, kidia, kfdia
 
     real(jphook) :: hook_handle
 

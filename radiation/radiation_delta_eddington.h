@@ -18,9 +18,9 @@
 !---------------------------------------------------------------------
 ! Perform in-place delta-Eddington scaling of the phase function
 elemental subroutine delta_eddington(od, ssa, g)
-
+!$loki inline
   use parkind1, only : jprb
-  
+
   ! Total optical depth, single scattering albedo and asymmetry
   ! factor
   real(jprb), intent(inout) :: od, ssa, g
@@ -44,7 +44,7 @@ end subroutine delta_eddington
 ! scattering-optical-depth-multiplied-by-asymmetry-factor, scat_od_g,
 ! rather than the asymmetry factor.
 elemental subroutine delta_eddington_extensive(od, scat_od, scat_od_g)
-
+!$loki inline
   use parkind1, only : jprb
 
   ! Total optical depth, scattering optical depth and asymmetry factor

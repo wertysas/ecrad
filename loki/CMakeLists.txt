@@ -72,4 +72,6 @@ loki_transform_target(
     SOURCES ${ecrad_loki_SOURCE_DIRS}
     NO_PLAN_SOURCEDIR
     DEFINITIONS HAVE_FIELD_API=ON
+    INCLUDES "${PROJECT_SOURCE_DIR}/radiation"
+
 )

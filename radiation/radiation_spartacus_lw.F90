@@ -21,6 +21,7 @@
 
 module radiation_spartacus_lw
 
+#ifndef HAVE_LOKI
   public
 
 contains
@@ -1082,4 +1083,5 @@ contains
 
   end subroutine solver_spartacus_lw
 
+#endif
 end module radiation_spartacus_lw

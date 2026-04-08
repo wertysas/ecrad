@@ -21,6 +21,7 @@
 
 module radiation_mcica_sw
 
+#ifndef HAVE_LOKI
   public
 
 contains
@@ -403,4 +404,5 @@ contains
     
   end subroutine solver_mcica_sw
 
+#endif
 end module radiation_mcica_sw

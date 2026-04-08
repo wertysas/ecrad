@@ -15,6 +15,7 @@
 
 module radiation_cloudless_lw
 
+#ifndef HAVE_LOKI
 public :: solver_cloudless_lw
 
 contains
@@ -176,4 +177,5 @@ contains
     
   end subroutine solver_cloudless_lw
 
+#endif
 end module radiation_cloudless_lw

@@ -18,6 +18,7 @@
 
 module radiation_save
 
+#ifndef HAVE_LOKI
   use parkind1, only : jprb
 
   implicit none
@@ -1472,4 +1473,5 @@ contains
 
   end subroutine save_sw_diagnostics
   
+#endif
 end module radiation_save

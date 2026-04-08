@@ -33,6 +33,7 @@
 
 module radiation_spartacus_sw
 
+#ifndef HAVE_LOKI
   public
 
 contains
@@ -1716,4 +1717,5 @@ end if
 
   end subroutine step_migrations
 
+#endif
 end module radiation_spartacus_sw

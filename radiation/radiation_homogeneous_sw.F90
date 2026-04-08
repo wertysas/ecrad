@@ -20,6 +20,7 @@
 
 module radiation_homogeneous_sw
 
+#ifndef HAVE_LOKI
   public
 
 contains
@@ -371,4 +372,5 @@ contains
 
   end subroutine solver_homogeneous_sw
 
+#endif
 end module radiation_homogeneous_sw

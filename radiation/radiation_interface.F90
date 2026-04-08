@@ -220,6 +220,7 @@ contains
     use radiation_cloud,          only : cloud_type, crop_cloud_fraction
     use radiation_aerosol,        only : aerosol_type
     use radiation_flux,           only : flux_type, calc_toa_spectral, calc_surface_spectral
+#ifndef HAVE_LOKI
     use radiation_spartacus_sw,   only : solver_spartacus_sw
     use radiation_spartacus_lw,   only : solver_spartacus_lw
     use radiation_tripleclouds_sw,only : solver_tripleclouds_sw
@@ -231,6 +232,7 @@ contains
     use radiation_homogeneous_sw, only : solver_homogeneous_sw
     use radiation_homogeneous_lw, only : solver_homogeneous_lw
     use radiation_save,           only : save_radiative_properties
+#endif
 
     ! Treatment of gas and hydrometeor optics 
     use radiation_monochromatic,  only : &

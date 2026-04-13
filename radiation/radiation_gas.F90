@@ -644,11 +644,11 @@ contains
 
     if (present(istartcol)) then
       kidia = istartcol
+      kfdia = istartcol + ubound(mixing_ratio,1) - lbound(mixing_ratio,1)
     else
-      kidia = 1
+      kidia = lbound(mixing_ratio,1)
+      kfdia = ubound(mixing_ratio,1)
     end if
-
-    kfdia = kidia + size(mixing_ratio,1) - 1
     
     !$loki remove
     if (kidia < 1 .or. kfdia < 1 .or. kidia > this%ncol .or. kfdia > this%ncol) then

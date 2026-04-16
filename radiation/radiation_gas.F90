@@ -485,8 +485,10 @@ contains
           else if (iunits == IVolumeMixingRatio &
                &   .and. this%iunits(ig) == IMassMixingRatio) then
             gas_sf = sf * AirMolarMass / GasMolarMass(ig)
+          else
+            gas_sf = sf
           end if
-          gas_sf = sf * this%scale_factor(ig)
+          gas_sf = gas_sf * this%scale_factor(ig)
 
           if (gas_sf /= 1.0_jprb) then
 

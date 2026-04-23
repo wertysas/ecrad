@@ -78,4 +78,5 @@ loki_transform_target(
     DEFINITIONS
         HAVE_FIELD_API=ON
         HAVE_ACC=ON
+        HAVE_LOKI=ON
 )

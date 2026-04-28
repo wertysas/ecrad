@@ -459,14 +459,15 @@ contains
         end if
         gas_sf = gas_sf * this%scale_factor(igas)
 
+        !$loki separator
         if (gas_sf /= 1.0_jprb) then
-
           do jlev=1,this%nlev
             do jcol=istartcol,iendcol
               this%mixing_ratio(jcol,jlev,igas) = this%mixing_ratio(jcol,jlev,igas) * gas_sf
             end do
           end do
         end if
+        !$loki separator
         ! Store the new units and scale factor for this gas inside the
         ! gas object
         this%iunits(igas) = iunits
@@ -492,12 +493,14 @@ contains
 
           if (gas_sf /= 1.0_jprb) then
 
+          !$loki separator
             do jlev=1,this%nlev
               do jcol=istartcol,iendcol
                 this%mixing_ratio(jcol,jlev,ig) = this%mixing_ratio(jcol,jlev,ig) * gas_sf
               end do
             end do
           end if
+          !$loki separator
           ! Store the new units and scale factor for this gas inside the
           ! gas object
           this%iunits(ig) = iunits

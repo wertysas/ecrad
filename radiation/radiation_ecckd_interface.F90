@@ -317,7 +317,7 @@ contains
            &  single_level%skin_temperature(istartcol:iendcol), &
            &  lw_emission(:,:))
 !NEC$ forced_collapse
-      lw_emission(config%n_g_lw,istartcol:iendcol) = lw_emission(config%n_g_lw,istartcol:iendcol) * (1.0_jprb - lw_albedo(config%n_g_lw,istartcol:iendcol))
+      lw_emission(:,istartcol:iendcol) = lw_emission(:,istartcol:iendcol) * (1.0_jprb - lw_albedo(:,istartcol:iendcol))
 
     end if
 
